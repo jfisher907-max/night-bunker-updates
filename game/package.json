@@ -1,0 +1,83 @@
+{
+  "name": "night-bunker",
+  "version": "6.69.1",
+  "description": "Night Bunker, a roguelite zombie survival shooter",
+  "main": "src/main.js",
+  "scripts": {
+    "prepare-game": "node scripts/prepare-game.js",
+    "icon": "node scripts/make-icon.js",
+    "start": "electron .",
+    "dist:win": "node scripts/prepare-game.js && electron-builder --win --x64",
+    "dist:linux": "node scripts/prepare-game.js && electron-builder --linux dir"
+  },
+  "author": "Jake",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@fontsource/permanent-marker": "^5.3.0",
+    "@fontsource/special-elite": "^5.3.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "playwright-core": "^1.63.0",
+    "png-to-ico": "^3.0.2",
+    "three": "0.128.0"
+  },
+  "productName": "Night Bunker",
+  "private": true,
+  "build": {
+    "appId": "com.nightbunker.game",
+    "productName": "Night Bunker",
+    "copyright": "Night Bunker",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**",
+      "app/**",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Night-Bunker-${version}-${os}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Night Bunker",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "Night-Bunker-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "icon": "build/icon.png",
+      "category": "Game"
+    },
+    "publish": null
+  },
+  "nbElectron": "44.5.1",
+  "nbUpdateFeed": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/updates/feed.json",
+  "nbShell": 2
+}

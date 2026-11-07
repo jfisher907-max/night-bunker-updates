@@ -20,6 +20,13 @@
 #deskUpd .btn{font-size:17px;padding:6px 18px}
 #deskUpd.err{color:#e0a080;border-color:#a05040}
 #deskUpd .bar{flex:1 1 120px;height:6px;background:rgba(255,255,255,.12)}#deskUpd .bar i{display:block;height:100%;background:var(--brass)}
+#deskUpdOv{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(4,5,7,.88);padding:16px}
+#deskUpdOv[hidden]{display:none}
+#deskUpdOv .card{max-width:520px;width:100%;text-align:center;border:1px solid var(--brass);background:#0d0b09;padding:26px 22px}
+#deskUpdOv h2{margin:6px 0 10px}#deskUpdOv p{font:15px var(--ui);color:var(--paper-dim);margin:0 0 16px;line-height:1.5}
+#deskUpdOv .spin{width:34px;height:34px;margin:4px auto 10px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--brass);border-radius:50%;animation:nbspin 0.9s linear infinite}
+#deskUpdOv .ok{font-size:34px;color:var(--toxic);margin:0 0 6px}#deskUpdOv.err .ok{color:#e0a080}
+@keyframes nbspin{to{transform:rotate(360deg)}}
 @media (max-width:560px){#deskOv .opt{grid-template-columns:1fr}#deskOv .opt .hint{grid-column:1}}`;
   document.head.appendChild(css);
 
@@ -99,20 +106,31 @@
   if (D.updateStatus) {
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const bar = document.createElement('div'); bar.id = 'deskUpd'; bar.hidden = true;
+    const card = document.createElement('div'); card.id = 'deskUpdOv'; card.hidden = true; document.body.appendChild(card);
     const pb = $('playBar');
     if (pb && pb.parentElement) pb.parentElement.insertBefore(bar, pb);
     let us = D.updateStatus(), shownOk = false, checking = false;
     function renderUpd() {
       const u = us; let html = '', err = false;
-      if (u.updated && u.updated.ok && !shownOk) html = `<span>Updated to v${esc(u.updated.version)}. Your saves and runs carried over.</span><button class="btn ghost" data-a="dismiss">OK</button>`;
+      if (u.updated && !shownOk) html = '';
       else if (u.state === 'ready') html = `<span>Update v${esc(u.version)} is ready${u.from === 'downloads' ? ' (found in your Downloads)' : ''}. The game restarts by itself, takes a few seconds.</span><button class="btn" data-a="apply">Update now</button>`;
       else if (u.state === 'downloading') html = `<span>Downloading update v${esc(u.version)}…</span><span class="bar"><i style="width:${Math.round((u.progress || 0) * 100)}%"></i></span>`;
       else if (u.state === 'applying') html = '<span>Updating, the game will reopen in a moment…</span>';
       else if (u.state === 'installer') { err = true; html = `<span>${esc(u.message)}</span>`; }
       else if (u.state === 'error' && u.message) { err = true; html = `<span>Update problem: ${esc(u.message)}</span><button class="btn ghost" data-a="dismiss">OK</button>`; }
       bar.classList.toggle('err', err); bar.innerHTML = html; bar.hidden = !html;
+      // full-screen cards: while the update installs, and once after the game reopens
+      let c = '', cerr = false;
+      if (u.state === 'applying') c = `<div class="spin"></div><h2>Installing update v${esc(u.version || '')}</h2><p>Night Bunker will close and reopen by itself in a few seconds. Please don't start it again in the meantime.</p>`;
+      else if (u.updated && !shownOk && u.updated.ok) c = `<div class="ok">✔</div><h2>Update complete</h2><p>You're now on v${esc(u.updated.version)}. Your saves and runs carried over.</p><button class="btn" data-a="dismiss">Play</button>`;
+      else if (u.updated && !shownOk && !u.updated.ok) { cerr = true; c = `<div class="ok">✖</div><h2>Update didn't install</h2><p>${esc(u.updated.message || 'Something went wrong.')} You're still on v${esc(u.current)}; it will offer the update again.</p><button class="btn" data-a="dismiss">OK</button>`; }
+      card.classList.toggle('err', cerr); card.innerHTML = c ? `<div class="card">${c}</div>` : ''; card.hidden = !c;
+      if (c && card.querySelector('button')) card.querySelector('button').focus();
+      if (c && u.updated && u.updated.ok && !shownOk && !card._t) card._t = setTimeout(() => { if (!shownOk) { shownOk = true; renderUpd(); } }, 12000);
       $('dCheck').textContent = checking ? 'Checking…' : u.state === 'none' ? 'Up to date · check again' : 'Check for updates';
     }
+    card.addEventListener('click', e => { if (e.target.dataset && e.target.dataset.a === 'dismiss') { shownOk = true; if (us.state === 'error') us = { ...us, state: 'none', message: '' }; renderUpd(); } });
+    window.addEventListener('keydown', e => { if (!card.hidden) { e.stopImmediatePropagation(); if ((e.key === 'Enter' || e.key === 'Escape') && card.querySelector('button')) { e.preventDefault(); card.querySelector('button').click(); } } }, true);
     bar.addEventListener('click', e => {
       const a = e.target.dataset && e.target.dataset.a;
       if (a === 'apply') { us = { ...us, state: 'applying' }; renderUpd(); D.applyUpdate(); }

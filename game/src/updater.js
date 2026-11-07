@@ -226,38 +226,53 @@ async function check() {
 }
 
 // ---------- applying ----------
-const PS1 = `param([string]$Staged, [string]$Resources, [string]$Exe, [int]$GamePid, [string]$Result, [string]$Version)
-$ErrorActionPreference = 'Stop'
-function Done($ok, $msg) { @{ ok = $ok; version = $Version; message = $msg; at = (Get-Date).ToString('o') } | ConvertTo-Json | Set-Content -LiteralPath $Result -Encoding UTF8 }
-try {
-  try { Wait-Process -Id $GamePid -Timeout 120 -ErrorAction SilentlyContinue } catch {}
-  $deadline = (Get-Date).AddSeconds(60)
-  while ((Get-Date) -lt $deadline -and (Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $Exe })) { Start-Sleep -Milliseconds 300 }
-  $dst = Join-Path $Resources 'app.asar'; $new = "$dst.new"; $prev = "$dst.prev"
-  Copy-Item -LiteralPath $Staged -Destination $new -Force
-  $ok = $false
-  for ($i = 0; $i -lt 40 -and -not $ok; $i++) {
-    try { Copy-Item -LiteralPath $dst -Destination $prev -Force; Move-Item -LiteralPath $new -Destination $dst -Force; $ok = $true } catch { Start-Sleep -Milliseconds 500 }
-  }
-  if ($ok) { Remove-Item -LiteralPath $Staged -Force -ErrorAction SilentlyContinue; Done $true '' } else { Remove-Item -LiteralPath $new -Force -ErrorAction SilentlyContinue; Done $false 'The game files were still in use.' }
-} catch { Done $false $_.Exception.Message }
-Start-Process -FilePath $Exe -WorkingDirectory (Split-Path -Parent $Exe)
+// The swap runs in a helper: this same exe started with ELECTRON_RUN_AS_NODE=1, i.e. plain Node, which never opens
+// app.asar. It waits for the game to exit, moves the staged archive in (keeping app.asar.prev), writes result.json and
+// starts the game again. (6.70.1; 6.69.0-6.70.0 used a hidden PowerShell script, which could fail with no trace.)
+const HELPER = `'use strict';
+process.noAsar = true;
+const fs = (() => { try { return require('original-fs'); } catch (e) { return require('fs'); } })();
+const path = require('path'), { spawn } = require('child_process');
+const a = JSON.parse(process.argv[2]);
+const log = m => { try { fs.appendFileSync(a.log, new Date().toISOString() + ' helper: ' + m + '\\n'); } catch (e) {} };
+const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  let ok = false, msg = '';
+  try {
+    log('waiting for the game (pid ' + a.pid + ') to close');
+    for (let t = 0; alive(a.pid) && t < 600; t++) await sleep(200);
+    await sleep(500);
+    const dst = path.join(a.resources, 'app.asar');
+    fs.copyFileSync(a.staged, dst + '.new');
+    for (let i = 0; i < 60 && !ok; i++) {
+      try { fs.copyFileSync(dst, dst + '.prev'); fs.renameSync(dst + '.new', dst); ok = true; }
+      catch (e) { msg = e.code + ' ' + e.message; await sleep(500); }
+    }
+    if (ok) { try { fs.unlinkSync(a.staged); } catch (e) {} msg = ''; log('swapped in ' + a.version); }
+    else { try { fs.unlinkSync(dst + '.new'); } catch (e) {} msg = 'The game files were still in use (' + msg + ').'; log(msg); }
+  } catch (e) { msg = e.message; log('failed: ' + e.stack); }
+  try { fs.writeFileSync(a.result, JSON.stringify({ ok, version: a.version, message: msg, at: new Date().toISOString() })); } catch (e) {}
+  const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+  try { spawn(a.exe, a.args, { detached: true, stdio: 'ignore', cwd: path.dirname(a.exe), env }).unref(); log('relaunched'); }
+  catch (e) { log('relaunch failed: ' + e.message); }
+  setTimeout(() => process.exit(0), 500);
+})();
 `;
 
 function apply() {
   const s = stagedVersion();
   if (!s || status.state !== 'ready') return false;
-  if (process.platform !== 'win32' && !process.env.NB_UPDATE_SHELL) return false;
   const resources = process.env.NB_RESOURCES || process.resourcesPath;
-  const ps1 = path.join(dir, 'apply.ps1'), result = path.join(dir, 'result.json');
-  fs.writeFileSync(ps1, PS1);
+  const helper = path.join(dir, 'apply.js'), result = path.join(dir, 'result.json');
+  fs.writeFileSync(helper, HELPER);
   try { fs.unlinkSync(result); } catch (e) {}
-  const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ps1,
-    '-Staged', path.join(dir, 'app.asar'), '-Resources', resources, '-Exe', process.execPath,
-    '-GamePid', String(process.pid), '-Result', result, '-Version', s.version];
-  const shellExe = process.env.NB_UPDATE_SHELL || 'powershell.exe';
-  note('applying ' + s.version + ' via ' + shellExe);
-  const child = spawn(shellExe, args, { detached: true, stdio: 'ignore', windowsHide: true });
+  const a = { staged: path.join(dir, 'app.asar'), resources, exe: process.execPath, args: process.argv.slice(1),
+    pid: process.pid, result, version: s.version, log };
+  note('applying ' + s.version + ' with ' + process.execPath + ' as node');
+  const child = spawn(process.execPath, [helper, JSON.stringify(a)], {
+    detached: true, stdio: 'ignore', windowsHide: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } });
+  child.on('error', e => { note('helper failed to start: ' + e.message); set({ state: 'error', message: 'Could not start the updater: ' + e.message }); });
   child.unref();
   set({ state: 'applying' });
   return true;

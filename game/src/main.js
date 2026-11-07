@@ -170,7 +170,7 @@ ipcMain.on('update:apply', () => {
   if (!updater.apply()) return;
   saveSettings();
   // give the page a moment to write its run autosave, then close so the swap can happen
-  setTimeout(() => app.quit(), 600);
+  setTimeout(() => app.quit(), 1500);   // long enough to read the "Installing update" card
 });
 
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });

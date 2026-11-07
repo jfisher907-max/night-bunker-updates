@@ -1,7 +1,7 @@
 {
-  "version": "6.69.0",
-  "url": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/updates/Night-Bunker-Windows-6.69.0.zip",
-  "sha256": "8b4170ad307bd5b84a5a1e9397cb9ec6e6da7da109a1219fcc1540155902a72f",
-  "size": 42932958,
-  "notes": "Adds in-game updates."
+  "version": "6.69.1",
+  "url": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/e9ce78f30b370c927cce6a90729d871d620338c2/Night-Bunker-Windows-6.69.1.zip",
+  "sha256": "fbcd08bfebdec3e231aef5b224c67db9d98e9f5076b34c7f2a38569c30683e9b",
+  "size": 45562214,
+  "notes": ""
 }

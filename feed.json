@@ -1,0 +1,2027 @@
+{
+ "version": "6.69.1",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/e9ce78f30b370c927cce6a90729d871d620338c2/game/",
+ "notes": "Night Bunker 6.69.1",
+ "files": {
+  "app/game/assets/ammo_color.webp": [
+   30268,
+   "77c54a137e956df0e7e0098da76a94bbc4967d2d6e9f2668c034b3b0031f928a"
+  ],
+  "app/game/assets/ammo_metal-ammo_rough.webp": [
+   25778,
+   "9c57d46e6c0cb015af13d94c2f06b27390f50e5343ec330c3a23cbd8ee443e75"
+  ],
+  "app/game/assets/ammo_normal.webp": [
+   9058,
+   "b2ce8631ceee8835e652cc2ea393e4a669d12d753da39d7a926760c1489361d1"
+  ],
+  "app/game/assets/ammo.json": [
+   51949,
+   "25c991386aa41e1a7922e8f65c30c4b494fc00dbb6205cfaff8609aaa7f7009d"
+  ],
+  "app/game/assets/arch_bank_color.webp": [
+   27758,
+   "d181c56a6ae8483e2d282d8e8c48ed53030999d2748926fb6ceb1474ede698e4"
+  ],
+  "app/game/assets/arch_bank_normal.webp": [
+   38920,
+   "953d5d40200698898f905f007bccfb1a178e765955940fe019405b399a9f667d"
+  ],
+  "app/game/assets/arch_bank_orm.webp": [
+   6318,
+   "0a56b8e906b5b1148a76d2f9bbde934bdaee5aac44e79422b80d05cf35207429"
+  ],
+  "app/game/assets/arch_bark_color.webp": [
+   28510,
+   "b6070313e5f773bd6757cad67f488e1f358a957c4d64dedfc10fa255f73b83c8"
+  ],
+  "app/game/assets/arch_bark_normal.webp": [
+   46224,
+   "0d5433734b46718f77b53d597161fd10de3b932411c263f890791b0c9098c6e7"
+  ],
+  "app/game/assets/arch_bark_orm.webp": [
+   6318,
+   "0fbd0572c1824f5b67aa9754390cb63c3d139502eb9d66c3087b28d26e00ac77"
+  ],
+  "app/game/assets/arch_brass_color.webp": [
+   17532,
+   "16c69567cdf92e0225a4a9fb971a4523bb882cb0a01cc52eccabae306d13d912"
+  ],
+  "app/game/assets/arch_brass_normal.webp": [
+   6314,
+   "a075523f2356a15749cb2c0bd197950b7e9de8561c5e5583b3cc9d5683aa0cdf"
+  ],
+  "app/game/assets/arch_brass_orm.webp": [
+   11694,
+   "9a90bc575b9ec85d3f2150ed7fbefb6323408777aa0187bc7513f41eb1b3f626"
+  ],
+  "app/game/assets/arch_brick_color.webp": [
+   27158,
+   "e205c26da63fbe78f1242062e853e31af81c8351052c1ebc7b80bea82cc59574"
+  ],
+  "app/game/assets/arch_brick_normal.webp": [
+   31226,
+   "db11dbccffa0a39740446f0415a3317730a5967bb07c15e24a3762d218515aa8"
+  ],
+  "app/game/assets/arch_brick_orm.webp": [
+   8196,
+   "4f4f4bec88ed3e4c324066a011dea73c74e0db04f5cc38b07776714331c5054c"
+  ],
+  "app/game/assets/arch_burlap_color.webp": [
+   20560,
+   "e3e57ec53821f9031601224c328a9dc528dfcb020e794b8ec0fd31041832d522"
+  ],
+  "app/game/assets/arch_burlap_normal.webp": [
+   67742,
+   "ca9f9210aa4ed79a37b4eef636e883b3aee08dc6fa88df4ae14864eec50342c6"
+  ],
+  "app/game/assets/arch_burlap_orm.webp": [
+   6318,
+   "c5a6e7c0fa7f3e1fb8762738804f691bc42d15f74e5f65b718689628c9f3bad0"
+  ],
+  "app/game/assets/arch_burnt_color.webp": [
+   19970,
+   "3089d48e178acd36f1f177d460de433a695e64ba68ea07a90f27a5a92f814f99"
+  ],
+  "app/game/assets/arch_burnt_normal.webp": [
+   50610,
+   "074fb03ca16dfafc5a12cc830b5307646068884e905aee71bfd4d7935775fc56"
+  ],
+  "app/game/assets/arch_burnt_orm.webp": [
+   14612,
+   "6592dd002d17aca382c325a4ad5c47fa0b5475fdeefc8e6391365b477452ea45"
+  ],
+  "app/game/assets/arch_canvas_color.webp": [
+   11664,
+   "40e9f2f58f2d7f7a7249ad8b77407bc81862fc3581e88594ca94da03b956081a"
+  ],
+  "app/game/assets/arch_canvas_normal.webp": [
+   95292,
+   "c0901a48c1c678ca9a7f45d0a2ac637c62b6e77f3af495966ad6043c2c5083d8"
+  ],
+  "app/game/assets/arch_canvas_orm.webp": [
+   6318,
+   "796be27c3b337ff580a1f5ee024a8f8966460384e5ebdc8079ec4f6c18ca197a"
+  ],
+  "app/game/assets/arch_concrete_color.webp": [
+   35206,
+   "faba731fa2ecdebeb6718105aa041460570f8d6f4eea442fe6564fcedbe9d15c"
+  ],
+  "app/game/assets/arch_concrete_normal.webp": [
+   58928,
+   "10341d1e171dbcf8a6d7a1b4a68a08769575d0ce91c1424ec8962ccc3c11e5f4"
+  ],
+  "app/game/assets/arch_concrete_orm.webp": [
+   6318,
+   "ffd79f13341e6915019335753350bc9c7cbb1e185244e04f11cdc8fe6aefff1f"
+  ],
+  "app/game/assets/arch_enamel_blue_color.webp": [
+   33890,
+   "af029880019b0572fd0ecd7ecf8e15ff6892f563fac6dad5d5670df1d2f5f25a"
+  ],
+  "app/game/assets/arch_enamel_blue_normal.webp": [
+   21118,
+   "c066003b2ad77e6395413fddb0f22946f5873d194fcd7787e5b23393397aebf1"
+  ],
+  "app/game/assets/arch_enamel_blue_orm.webp": [
+   27310,
+   "4cc0e050460524e5e65489f3e900e1109ea789c640761e30f444b412dd3708fb"
+  ],
+  "app/game/assets/arch_enamel_cream_color.webp": [
+   54844,
+   "9438e07b5bd7c6f33c1d3585c2e358eaf2073e4a6f8b3de0fff792c4cbb754eb"
+  ],
+  "app/game/assets/arch_enamel_cream_normal.webp": [
+   24684,
+   "6304fa7edbde33b3b83f19c94f8a1e9cf3f41567070c8a2a8045d56b8ed4547c"
+  ],
+  "app/game/assets/arch_enamel_cream_orm.webp": [
+   31028,
+   "85c2ce11819582f1d3beb197bee37e2d6d936cf54f07a5594638ebec40a6bd3f"
+  ],
+  "app/game/assets/arch_fieldstone_color.webp": [
+   36682,
+   "16cf9436899a23d66de143869abc99354bf5a5ba0211af13fd127e02b23d41a5"
+  ],
+  "app/game/assets/arch_fieldstone_normal.webp": [
+   61820,
+   "8b03b43ff3c4408272cda53ba96665d522e9534987b187a9983fb5846b270ae8"
+  ],
+  "app/game/assets/arch_fieldstone_orm.webp": [
+   6318,
+   "8d2d466a43cb63f6611d15d8c91b0ef0e5743f4006d7a9b019cb319fdb40da2f"
+  ],
+  "app/game/assets/arch_glass_dark_color.webp": [
+   24894,
+   "6fbd7c288f4a57a3206f259816c4025b511037bbb408352ecd3d4600ec7e644d"
+  ],
+  "app/game/assets/arch_glass_dark_normal.webp": [
+   9762,
+   "4c0460fcdd1683d5359ce862496b1f0f7c6e5a61f920a08ce78a1ae199a2c5a1"
+  ],
+  "app/game/assets/arch_glass_dark_orm.webp": [
+   9384,
+   "95e18c4a2ef27437e35accfcf4c58ce29d5e68922a105653674464e84b896ffa"
+  ],
+  "app/game/assets/arch_hedge_color.webp": [
+   133426,
+   "92e02db320ccb27458641053bb3eb650f18965c4935ba9b17c9b0d509cef666c"
+  ],
+  "app/game/assets/arch_hedge_normal.webp": [
+   29226,
+   "6f1a1be4fd7c973f1fd4c759b8fe26070727f1b37f18cd755327aa594a4d6618"
+  ],
+  "app/game/assets/arch_hedge_orm.webp": [
+   8220,
+   "1337cdf923610ed1c77eb6c4f846734462513612a85ef64c04a18097e6e27786"
+  ],
+  "app/game/assets/arch_iron_rust_color.webp": [
+   17736,
+   "fb2800e556c2a85b78f5c6c695df28277fdd52ac32ad834b2653b4a50b7649dd"
+  ],
+  "app/game/assets/arch_iron_rust_normal.webp": [
+   23240,
+   "6f56114a7be1b7d0c1964d09a8b026551152643e67fe6e9f2e7fd1f83f05c2c9"
+  ],
+  "app/game/assets/arch_iron_rust_orm.webp": [
+   22020,
+   "a99e08f676e45a6828c43a797d7bad8c705956ccf2d2ea059b963a05faeab23b"
+  ],
+  "app/game/assets/arch_leaves_color.webp": [
+   44264,
+   "87a60a18baccbb2c8856f6095ced3c9de905c2d44a3e14dadfba3a23bdb0f893"
+  ],
+  "app/game/assets/arch_leaves_normal.webp": [
+   30514,
+   "a9c95e1eddcbe7cc9a361e492c76ab175a37fca709dca499e5ae1a6a6bb559d9"
+  ],
+  "app/game/assets/arch_leaves_orm.webp": [
+   6322,
+   "d8dcd992a63c943f530c1550a311e01247e77fd7414bd7c5b2d21f78f60382bb"
+  ],
+  "app/game/assets/arch_limestone_color.webp": [
+   21778,
+   "bb09d2c18e9921c998bcead250cbec163601cd9c317d01934900d4131b94d363"
+  ],
+  "app/game/assets/arch_limestone_normal.webp": [
+   23632,
+   "b4a3aaa2bcb420e71841be9e4692c9988673c3d6b12dc26ae06be6e5fc2aba52"
+  ],
+  "app/game/assets/arch_limestone_orm.webp": [
+   8254,
+   "27e7ee10739d8fbbe4cf490aff3ec07b1ecfedeb1d3aeada0b17bf7321f56f48"
+  ],
+  "app/game/assets/arch_pantile_color.webp": [
+   47994,
+   "9b5b003ef802ed6c914605291270cd558d4539d603f0fd3487c703d7dab8ccb0"
+  ],
+  "app/game/assets/arch_pantile_normal.webp": [
+   38034,
+   "6468d81c1429497ba819484e7b9fb2b3402790d70f75f216630bff52c5a89792"
+  ],
+  "app/game/assets/arch_pantile_orm.webp": [
+   18512,
+   "819115b6262e1cef2eb4dc3e47c40e2b91317ab12756a31c28913d2e420a8ff6"
+  ],
+  "app/game/assets/arch_plank_red_color.webp": [
+   27850,
+   "ce4f4262329a3f06420cc11b7b2aaa26902447bc593f0c79db0a6a94b78d64fb"
+  ],
+  "app/game/assets/arch_plank_red_normal.webp": [
+   38486,
+   "e14d0db8bd416f1a125f9220f9758d6d47e4763eeb706481b1399211b09b525e"
+  ],
+  "app/game/assets/arch_plank_red_orm.webp": [
+   12592,
+   "92250ca90ac8ddc24a1616dcbe8fd4b4dadf803e2289adbea5c84c9b78d7fcc5"
+  ],
+  "app/game/assets/arch_plaster_color.webp": [
+   18704,
+   "eb5ae0f99405663a9724e5f0c6ededcef95592b4ea1b17eb1d4b6ce8f2dd3e8b"
+  ],
+  "app/game/assets/arch_plaster_normal.webp": [
+   35918,
+   "5032c71355e3fd400b3210e062b97d09025cd54f85989700e4b068a7984898f9"
+  ],
+  "app/game/assets/arch_plaster_orm.webp": [
+   6876,
+   "bd8bb4115adb877be91e18a7eb26885b8c6381bbaa0d154bbb3989633a259e98"
+  ],
+  "app/game/assets/arch_poster_color.webp": [
+   29798,
+   "a35ba0fa771aedfd0797a7394bfd1061f1717d2ea0fe5b381141e242793af1c6"
+  ],
+  "app/game/assets/arch_poster_normal.webp": [
+   34128,
+   "06c67099805201f54e597384e986a70096e762aeaaae7699327ac8dc72d7a4bf"
+  ],
+  "app/game/assets/arch_poster_orm.webp": [
+   6320,
+   "f662d47a855c6f459e1f7f345d2a3987ef7af368f6d48bbb3e3b9fa3fd05477e"
+  ],
+  "app/game/assets/arch_render_dark_color.webp": [
+   12650,
+   "5d900deea4a85f386cac9bc11e9ccd807c0f6bcca4c72bf713a297709003ce29"
+  ],
+  "app/game/assets/arch_render_dark_normal.webp": [
+   6382,
+   "8e9ae3dd02dc17c008568a2014c220ca9bd8b9c0769000b11d4f9a7372c19dbc"
+  ],
+  "app/game/assets/arch_render_dark_orm.webp": [
+   6318,
+   "d376f9fbc03271ebafdc829f9311afe5355944b43ec0f34edcd22283f6fc96c2"
+  ],
+  "app/game/assets/arch_shutter_blue_color.webp": [
+   20616,
+   "6cad14542a86e69ebad7ab0d45ffca4b352cc2738df69b8ec79650d479c2ec94"
+  ],
+  "app/game/assets/arch_shutter_blue_normal.webp": [
+   35974,
+   "b767337d493db594abfef2f79cb9e3612090fdf4229f67e4e9db30b9454c21f8"
+  ],
+  "app/game/assets/arch_shutter_blue_orm.webp": [
+   10688,
+   "1e7e42e3cbd6afeecae7df07fef52e81acfafab6427458564429f468d734bd5e"
+  ],
+  "app/game/assets/arch_shutter_green_color.webp": [
+   18618,
+   "790618672f8c435a793c3b8d6c67a7d9e4fc440985f26c0526b7b3da24619364"
+  ],
+  "app/game/assets/arch_shutter_green_normal.webp": [
+   37812,
+   "ea7ab651aa87b7a0adb467ced8f9215731319aa78dd7463b3b29196ca2e565e8"
+  ],
+  "app/game/assets/arch_shutter_green_orm.webp": [
+   10812,
+   "a8443b9c102c57575ba1bcca43456a743eec07bade60c30cced3c7967fb77de8"
+  ],
+  "app/game/assets/arch_shutter_red_color.webp": [
+   22654,
+   "0cb9b00f4150514363698c88e75cbd48ecb801571c2e4934e705e9c5464db1ce"
+  ],
+  "app/game/assets/arch_shutter_red_normal.webp": [
+   38184,
+   "2984635c36de0942b6723a31cb562a32e1d73a469687614eb247050a159df89f"
+  ],
+  "app/game/assets/arch_shutter_red_orm.webp": [
+   10952,
+   "bb35df3d482fb58dc325abe4b6f2b4758b5aef604d37a4a97722d84870bfb409"
+  ],
+  "app/game/assets/arch_slate_color.webp": [
+   25702,
+   "031209d82bb91447b3ab0903f3da2f64558623e7564dedb7e13e3986a0b9de83"
+  ],
+  "app/game/assets/arch_slate_normal.webp": [
+   28692,
+   "4136060e75dc150b8a23a8e610f0836c9b1f44c04f6b46b24ca4deca928d07cb"
+  ],
+  "app/game/assets/arch_slate_orm.webp": [
+   13666,
+   "73abb7cf0fcd6ccb46318895f8c0213a223346c1130cec7b2bb9cb63c405a4ec"
+  ],
+  "app/game/assets/arch_steel_black_color.webp": [
+   19658,
+   "bbceb670f7e8fece476c30a0235750db69a509757e56ff5e06e37da5dce5c755"
+  ],
+  "app/game/assets/arch_steel_black_normal.webp": [
+   18170,
+   "136d3070c1a78f988f36b3d904242d107ea6fa4cf06c3ea271ee508f522a6f22"
+  ],
+  "app/game/assets/arch_steel_black_orm.webp": [
+   14386,
+   "a851d38687d586b8e13951966a2becaa1a4099857531a2f6a7c24dfe1a79f635"
+  ],
+  "app/game/assets/arch_steel_grey_color.webp": [
+   16036,
+   "b464772ff96ffd5062a0d22788471fb33f793e186ee9cc7b3fa986b454ab9489"
+  ],
+  "app/game/assets/arch_steel_grey_normal.webp": [
+   15556,
+   "b0ddb13b6846df20ad60a636c50b84f6121652cd319fbfb7943f7d9288ca9795"
+  ],
+  "app/game/assets/arch_steel_grey_orm.webp": [
+   12156,
+   "17212618085d91ddd6c116f83e7bfefa0163aa83156b7921b4e7ab605e2b79e0"
+  ],
+  "app/game/assets/arch_straw_color.webp": [
+   37764,
+   "9384abb795deb43c63e5086eb9b89a9f30c0713d09c7f522c6e6dab998193191"
+  ],
+  "app/game/assets/arch_straw_normal.webp": [
+   67540,
+   "6c385153b0f0ace0d15d4f481c7f9c94ae3c510a4be820673b423fb5bceb324a"
+  ],
+  "app/game/assets/arch_straw_orm.webp": [
+   6318,
+   "b96924c2b9ea8278cfc7c674e5d5a567f6cf898515be276b3b98e5124d13ff70"
+  ],
+  "app/game/assets/arch_tin_color.webp": [
+   20698,
+   "823afb30bfa29c72ba6acc56ba3262e5fd95a1dc9fc6cf4e176964ec4e00ab4c"
+  ],
+  "app/game/assets/arch_tin_normal.webp": [
+   14140,
+   "f17de71688575568a65dfa85681ab9aa529d8c8b4e3fc6352bd3d5c9d41b1127"
+  ],
+  "app/game/assets/arch_tin_orm.webp": [
+   13430,
+   "8c350d29a491719f72e8f3dd86a61ac7dd13bd85df0297021eb965ec39b4fe2a"
+  ],
+  "app/game/assets/arch_void_color.webp": [
+   5858,
+   "04c3707bbf4087a6e6a6c6b02e19c6ad1d9cfb768cab932c6b7111a1b3e8d687"
+  ],
+  "app/game/assets/arch_void_normal.webp": [
+   5876,
+   "15380fc7af9e36a52e2443721c894caba6043d57bd4c0892935405945d598940"
+  ],
+  "app/game/assets/arch_void_orm.webp": [
+   5880,
+   "61e529fd366f5750b5e272ceccae83dac37b9dab67709eb23bfb7e4a996b705a"
+  ],
+  "app/game/assets/arch_wood_dark_color.webp": [
+   27228,
+   "eed2649ff3693efdbfdec65137eca0c7a42113bbdac40a53471520cb94447e2c"
+  ],
+  "app/game/assets/arch_wood_dark_normal.webp": [
+   37420,
+   "61e0fe9e110ec8c3f57e20d4a19464314c47e3de69d081aa1427380938f9213d"
+  ],
+  "app/game/assets/arch_wood_dark_orm.webp": [
+   16962,
+   "f37ddf9a3d6fc47fbbd6599791ad59ad4b8d09faaced18ab1b085ad98dcdcdb4"
+  ],
+  "app/game/assets/arch_wood_grey_color.webp": [
+   28694,
+   "d6686a6fcccd6b9016a803a76412c53370631aa85d16828340a62bd0ccd1b2a9"
+  ],
+  "app/game/assets/arch_wood_grey_normal.webp": [
+   50522,
+   "da2548b1d7216a4d92c8e950474af1cf3e37783efe7334ac4d3b350b67447fe9"
+  ],
+  "app/game/assets/arch_wood_grey_orm.webp": [
+   19212,
+   "6c9f9909e97c10287884f641109b878b792149bad5a6c4907df375b4eaf38f9b"
+  ],
+  "app/game/assets/arch.json": [
+   3481407,
+   "7f80129c3f84a838d43805490f9298ce4349accda8ed937e55c3561e92d7c753"
+  ],
+  "app/game/assets/arms_arms2_color.webp": [
+   183248,
+   "91fe09168584003e8dd6fd26a3f0076286aa7b733263cbcfb9545792567cb36c"
+  ],
+  "app/game/assets/arms_arms2_normal.webp": [
+   201518,
+   "01e73ebcf5bf438d099908472559be724ff2095d4a8f095af85d6f4086fad127"
+  ],
+  "app/game/assets/arms_arms2_rough.webp": [
+   206514,
+   "6db0d18fcecc26d87a6ded840ba303ba1e9d22e4f68f9398f49b29f092a6540e"
+  ],
+  "app/game/assets/arms_sleeve2_color.webp": [
+   60490,
+   "d4e37c1ef464a461c5853a1a8536963721200046c893c9461a32ce8ffe37c42c"
+  ],
+  "app/game/assets/arms_sleeve2_normal.webp": [
+   51006,
+   "f2f87119d87dd6bb049d316497cbdeb5f806e0790d4494067440cd610696456a"
+  ],
+  "app/game/assets/arms_sleeve2_rough.webp": [
+   94190,
+   "28e3df1e0b7422fc9de34e35301bea9dcafd47449bae75858e9fa96791bd2362"
+  ],
+  "app/game/assets/arms.json": [
+   428322,
+   "8424dee05b2acbcbc21e311adfda736c937bd07bf45bf5619296ec0e39f333d7"
+  ],
+  "app/game/assets/bar_color.webp": [
+   114238,
+   "e64b73c6028016c24aa4b470d8f0cea1a8c93b8e6e2ef7da6cd441f2c59081ec"
+  ],
+  "app/game/assets/bar_metal-bar_rough.webp": [
+   108566,
+   "241703bfa00c98326a5455e5dc5a36ac9d8f11535605c46955f9b239083c5038"
+  ],
+  "app/game/assets/bar_normal.webp": [
+   10658,
+   "84527ac112787cd9aeed2ef2272b89d0b02ba03ef3e92957817ee8a8247f3143"
+  ],
+  "app/game/assets/bar.json": [
+   193395,
+   "a033a44fb2b7faf57caa4dedecd53a46695e98e332d90cd3f2d4f756bcaf9f9f"
+  ],
+  "app/game/assets/box_bear_color.webp": [
+   37040,
+   "6618697c85a3e22f8a8d5fb6fa1329a16740d43df61c42f47c53c803358397ee"
+  ],
+  "app/game/assets/box_bear_normal.webp": [
+   55120,
+   "3d2f324afc2324b7c75fb792815f4e33d6ba94cc503dab68c2f2c5fd8aecbc29"
+  ],
+  "app/game/assets/box_bear_rough.webp": [
+   28926,
+   "23e4b0d590dc7dfb3a0f2ead826243d866022c5472a150c46c2ee63f254d98b5"
+  ],
+  "app/game/assets/box_color.webp": [
+   117214,
+   "b863d359e5733e5d66b9aebfce0404f930d3d4738adc01b6f31acc61b74c17a5"
+  ],
+  "app/game/assets/box_normal.webp": [
+   18626,
+   "a7b1e7e7e2175d30b6011d1df48ebc0eedd1decbd55a84a0aed61fc73ef19307"
+  ],
+  "app/game/assets/box_rough.webp": [
+   163072,
+   "d22164bee3b340ab8cd259e062d075aee2b5f4c2f85ce561f6fd97ac7f332b16"
+  ],
+  "app/game/assets/box.json": [
+   319020,
+   "323081629d76908ae9182d48a006726234263d8c0b9c753547bcb90f7b6979a8"
+  ],
+  "app/game/assets/carbine_color.webp": [
+   122888,
+   "6df16d8538a75b91829f565386063193ac383ada7f9c5bceab6b910118a901ae"
+  ],
+  "app/game/assets/carbine_metal-carbine_rough.webp": [
+   100478,
+   "fa1f6c2e82bebf1097885b24531c4fed5a18c4d7add68907e232b28485396241"
+  ],
+  "app/game/assets/carbine_normal.webp": [
+   12120,
+   "fb211d0d2bf8d6fd727e7acde1d11c6fb2d56734193d3e4c76b8d092fa14496f"
+  ],
+  "app/game/assets/carbine.json": [
+   216065,
+   "a3700cb1863f5750e392b1ab0cbd803eeff853c7e34d6207b78c546422d32bf3"
+  ],
+  "app/game/assets/dbl_color.webp": [
+   103538,
+   "3474e222ed4b65f819792f63dabf1df99fddbb7b070242c021dc0e9b96a3fb79"
+  ],
+  "app/game/assets/dbl_metal-dbl_rough.webp": [
+   83050,
+   "3a10dd1cdc1331a93897a3598262573fb2b90f7d0a49155dd044da49ab685ba7"
+  ],
+  "app/game/assets/dbl_normal.webp": [
+   8208,
+   "118eb3c8796f8fe35cec7733237f96b5839a9a0eac19a559ec1573e44fbadb91"
+  ],
+  "app/game/assets/dbl.json": [
+   279070,
+   "535228d23d385142db28da5e837c528e71b3d50288a3c85a9509a43e8125571d"
+  ],
+  "app/game/assets/ether_color.webp": [
+   99642,
+   "ca5df313d4269e8c8aa7540f307d9396ed3028edefa11298b021b72ff198fb4e"
+  ],
+  "app/game/assets/ether_metal-ether_rough.webp": [
+   81190,
+   "3cf6c74cd945f83fb57237910758651a7e5f35b224652a477e169a115a34202b"
+  ],
+  "app/game/assets/ether_normal.webp": [
+   6948,
+   "bcec8ec1a9d9e1def7e89863cb8264b2d890c9cb5bfff7b44854828efa1fbc34"
+  ],
+  "app/game/assets/ether.json": [
+   242335,
+   "9ced161cbd37473746e506d85c511c5f71300a32ea9ea201b1c7ab14c1b2de3c"
+  ],
+  "app/game/assets/fg42_color.webp": [
+   96102,
+   "80f7b8befc7236b886df12d360f0ff396c02659d400c6eea15e2eca1c0e417e6"
+  ],
+  "app/game/assets/fg42_metal-fg42_rough.webp": [
+   117336,
+   "da4af979bf177b96e69e473ffe4363c0013bf9d435cf6af5f91666ef56833ac3"
+  ],
+  "app/game/assets/fg42_normal.webp": [
+   8268,
+   "e7611c59b4a9552e55e74be0a039d2d928f3d7f813b3a372e23d384244d6a902"
+  ],
+  "app/game/assets/fg42.json": [
+   204437,
+   "cef141dd057316a7ca4ee9301e3d8e346ae1df3c2c559c60efbdd4f47deef947"
+  ],
+  "app/game/assets/g43_color.webp": [
+   71900,
+   "63ed30b22a10a4503b52ed8abc6712b6ba08033ce0ba812165db0cf3df9d08ff"
+  ],
+  "app/game/assets/g43_metal-g43_rough.webp": [
+   49530,
+   "16f67b970f692b32053a2c9c804704845b3c49d5d61ec36922b29c46660eaf10"
+  ],
+  "app/game/assets/g43_normal.webp": [
+   8994,
+   "2464b675c102827c0d0c1ed64f08c80f89dd3bc9320c251820892c5600552fac"
+  ],
+  "app/game/assets/g43.json": [
+   151382,
+   "354f9fa3e475ad9f7c00da2c17071b44e0949df5116f5ff8d9796d75e6b5f9d1"
+  ],
+  "app/game/assets/gale_color.webp": [
+   125244,
+   "044fd103cdd2b7f799e96142ea0efb445c1ac70aacf8a60ee1929c38fd775d51"
+  ],
+  "app/game/assets/gale_metal-gale_rough.webp": [
+   101914,
+   "d3bcefe99f50149854268f019f5b1caf9f1527817558967c51d5d723466885fc"
+  ],
+  "app/game/assets/gale_normal.webp": [
+   7374,
+   "d7fb33d5e01bc36031ffd81e0fcfa377c74ddceccd08cca8d4eb53f15c873071"
+  ],
+  "app/game/assets/gale.json": [
+   226958,
+   "603d3653f92e9a2528cdd6a6bb7bd93c566c5358f9f7530b05d801956ec0418a"
+  ],
+  "app/game/assets/garand_color.webp": [
+   103760,
+   "e23c57d9feca000c3dec6e983c2988f295d685bc08d52e700f11273d8c681375"
+  ],
+  "app/game/assets/garand_metal-garand_rough.webp": [
+   102504,
+   "ac3fa087a846f281f8636545fae2fd91aff0dc40bc84fbc7338245ff4626197a"
+  ],
+  "app/game/assets/garand_normal.webp": [
+   8536,
+   "6324ca704e3060deab3ddee27bd9a59793d925409bed21f9b1a6fd4f26da9968"
+  ],
+  "app/game/assets/garand.json": [
+   272863,
+   "ae131fb73f1cda25442ff4232da7713d9105044f522763dbe4eb5dbf0b478b33"
+  ],
+  "app/game/assets/hound_color.webp": [
+   61176,
+   "cb246c37e9fb9afc621189afcc62ebce7e719d2f6e72c4994a60e3d73c19363f"
+  ],
+  "app/game/assets/hound_emit.webp": [
+   16024,
+   "ae6a6e2894d4abc05626d529c1adcbb8184f98551c141b3415fc90eb99f47d59"
+  ],
+  "app/game/assets/hound_normal.webp": [
+   42218,
+   "0fcaafd857850fb7a25ec4b859f80fe204a5e6db5e036df9311858c9a6c56928"
+  ],
+  "app/game/assets/hound_rough.webp": [
+   34236,
+   "e1026c62a670097c450491eb1fddb9520bface5b46106117cb4dbc19702bd683"
+  ],
+  "app/game/assets/hound.json": [
+   439916,
+   "3d72e0c0d1bc34d281530a68a558e20b4d98e31594a147860d8a06a450eb8320"
+  ],
+  "app/game/assets/kar98k_color.webp": [
+   108614,
+   "d59dc30cf8f5fdc8ab4d8cc5c0defb1860df20475b7e78370e81d9014c274949"
+  ],
+  "app/game/assets/kar98k_metal-kar98k_rough.webp": [
+   83240,
+   "20c233e7ea62e9dc2df27a543114566933e2a615ef41c7d048a1445def121204"
+  ],
+  "app/game/assets/kar98k_normal.webp": [
+   10192,
+   "d0cf3c0e8366689fe307da3e59ab09d830afa0dd8ce120a0ced38fcf42f80c40"
+  ],
+  "app/game/assets/kar98k.json": [
+   189916,
+   "ed5b9888163b82fe87d380c76d811ec001d048d3667cd96be2e512ceaf323c45"
+  ],
+  "app/game/assets/kino_brass_color.webp": [
+   10492,
+   "12bf09503984acfe9f36cb883f480e4c041cce659ddb18b4a757d9458343b9f2"
+  ],
+  "app/game/assets/kino_brass_normal.webp": [
+   6314,
+   "ae222c8cccf9f1adcbb048c8a679cd28515934393ab2f1d7928d828859ec70c4"
+  ],
+  "app/game/assets/kino_brass_orm.webp": [
+   10552,
+   "7d56d7ec4b6046356369adfa0f3dcfc85ec8b6ec9f4cefcbd4a1ff8de7ee37a2"
+  ],
+  "app/game/assets/kino_enamel_color.webp": [
+   10390,
+   "242fb0e6b8211b5270feffb9daa24bb0942c31a4cd05de503c97c03f7a852a6e"
+  ],
+  "app/game/assets/kino_enamel_normal.webp": [
+   14518,
+   "0de30ab327dbe6f9886bcd15ebdc75fbc357e781aae8e4e12a3e16389ecdc588"
+  ],
+  "app/game/assets/kino_enamel_orm.webp": [
+   22364,
+   "d4d5d3785aa0aaf33d8063a7ebf0868367d2ec1131f44974dc5159b5a30ec3de"
+  ],
+  "app/game/assets/kino_gilt_color.webp": [
+   11326,
+   "3dd910c9a90a1ba27c237f0a0f908dd138a4ab061d8df638bdceb153c10436cd"
+  ],
+  "app/game/assets/kino_gilt_normal.webp": [
+   7578,
+   "954d8d44c29c08886fc05e31cb57cf7ada3eb62cc8a2111cfcd2a627f18fa08a"
+  ],
+  "app/game/assets/kino_gilt_orm.webp": [
+   14534,
+   "9753ad9cde0ff3aa3f1579789012669f4e042d3f63846b376ac5fef9111b4865"
+  ],
+  "app/game/assets/kino_glass_color.webp": [
+   6920,
+   "7063cb33aa08cd029f5aba449434f45f079dbc3ee5c8f2f6b899813111cb64f9"
+  ],
+  "app/game/assets/kino_glass_normal.webp": [
+   6314,
+   "33eb6c774ba62c93224b988b1c938a5c53e2fb26c05a4c448becffd6bfe2f1b0"
+  ],
+  "app/game/assets/kino_glass_orm.webp": [
+   7152,
+   "599aa416eff3589b21915fa9d40fce4c683a6962eaa507cb2ed284a832663b6c"
+  ],
+  "app/game/assets/kino_glow_color.webp": [
+   7818,
+   "ec7f289d921ff0148077dca8e7955ce74fb97cdddf4a632d603f0bdf33999050"
+  ],
+  "app/game/assets/kino_glow_normal.webp": [
+   6314,
+   "4cdd2a4506d74e1039b6bb5f12a8d22e49147367628d87cefde69974dfd2a7bb"
+  ],
+  "app/game/assets/kino_glow_orm.webp": [
+   6320,
+   "04798ccdef5c41b865c7421b99fec5b243193e10e87293c509d7f0fca7936bc2"
+  ],
+  "app/game/assets/kino_iron_color.webp": [
+   8682,
+   "8b68a2a62f6a592a25e4a42d2f8f5a65f758b632aedf5cb6da88c9cb998f7af2"
+  ],
+  "app/game/assets/kino_iron_normal.webp": [
+   50598,
+   "a7eaebd26648869b4b352a41d94d0e32d85bcc0fd7c408fab4f1ce925641ac1a"
+  ],
+  "app/game/assets/kino_iron_orm.webp": [
+   24160,
+   "36f6b3dee77a523f61b6497a57399c4569bb5eb5a6aa4fd145b3cdf9a9a3c0ed"
+  ],
+  "app/game/assets/kino_tin_color.webp": [
+   7760,
+   "3fe62a0efc687da33b525ad3ed7e6f3217eead97c4dbfab34a5d5191bdc7577e"
+  ],
+  "app/game/assets/kino_tin_normal.webp": [
+   6426,
+   "e59e9173dabf349462a5d6cf4d4544c5db2821cd44c7d99e1e13b64bb85b1d5c"
+  ],
+  "app/game/assets/kino_tin_orm.webp": [
+   8826,
+   "c7eb1c7d396b91f4519ac873a5f6ada62305840ead1270340ccdcf433ec67352"
+  ],
+  "app/game/assets/kino_velvet_color.webp": [
+   7978,
+   "598180c27b985309de4758d5473eb022f650eaa53839a2e7f5dfe49cd332ba83"
+  ],
+  "app/game/assets/kino_velvet_normal.webp": [
+   38966,
+   "440162cb22091a98f0436087e10cd6fc2ef52d52eae188fff115b38248aa69bd"
+  ],
+  "app/game/assets/kino_velvet_orm.webp": [
+   7294,
+   "5d75718385bc741934eeab532269f1c0d34c6a6136fa7b9c7474a88a90b4ad0e"
+  ],
+  "app/game/assets/kino_walnut_color.webp": [
+   16580,
+   "ea89e904e3b3a36cd394c0125bc3984dbccdce25f2f0abf98a72ee95411bfdfe"
+  ],
+  "app/game/assets/kino_walnut_normal.webp": [
+   13566,
+   "931ff8890ef6450131e81b943635c2dbb61ecf1c0a46bc2d46f14abc791ccdbb"
+  ],
+  "app/game/assets/kino_walnut_orm.webp": [
+   18288,
+   "366cdb2c43fcb188afd2323d705c020b1efe17e70ef08a8829dd8c4da60c96e8"
+  ],
+  "app/game/assets/kino.json": [
+   471847,
+   "4cf4cc8a390d500b3e570e6110d76e31a69620b29053a38abde60c57e6994e07"
+  ],
+  "app/game/assets/kit_bakelite_color.webp": [
+   10168,
+   "45f02641fd3e52d2d3cfcbfaf2027849a0b157d6fbd748888c8e958a6b93495b"
+  ],
+  "app/game/assets/kit_bakelite_normal.webp": [
+   6314,
+   "9921301f37ddae0046d7923375150648e5966c27a2f54b4e9f85aed1410461d0"
+  ],
+  "app/game/assets/kit_bakelite_orm.webp": [
+   8174,
+   "710ac0464e671c86e3e205352f1d8dda1dd622d4a64225feb3e935f8fc37aedc"
+  ],
+  "app/game/assets/kit_brass_color.webp": [
+   17532,
+   "ffae75c2549a128b3850d750647fb048661e6c87304efeb04237b72fdbb244e2"
+  ],
+  "app/game/assets/kit_brass_normal.webp": [
+   6314,
+   "e3b6cadca4cf319597d85dcf12c4254044b2e8e0d7e573f5623e2ff916aee338"
+  ],
+  "app/game/assets/kit_brass_orm.webp": [
+   11694,
+   "af996348da7e43d2c53dcd222349c09b927df978467fd57828bc247615604656"
+  ],
+  "app/game/assets/kit_brick_color.webp": [
+   27158,
+   "b09649027bf83eff7d0d2cf080e68bc88aa330d21743286fb7f3f6b5d103f5f9"
+  ],
+  "app/game/assets/kit_brick_normal.webp": [
+   31226,
+   "330f1efd2c4eb7e5f76a1389179d8aea58423a68c3761161d0b34e7769fffa0a"
+  ],
+  "app/game/assets/kit_brick_orm.webp": [
+   8196,
+   "98b526413e4eb9486f225a05fd8d96746a4d0bc8310d4c6972f68830fed2e98d"
+  ],
+  "app/game/assets/kit_burlap_color.webp": [
+   20560,
+   "8a91535ed8b26dacf00151300579e00638abe0ca2b828dadeb1cb0a124b08a6c"
+  ],
+  "app/game/assets/kit_burlap_normal.webp": [
+   67742,
+   "9d5708084dab68181d95bcb7db464dfcb2bbe12d2c0280ad82aa31bdc71c6e68"
+  ],
+  "app/game/assets/kit_burlap_orm.webp": [
+   6318,
+   "3948fdc1929c0feb6c2c378005ba7173df42d3a5276220f1c4d46691b3044cb3"
+  ],
+  "app/game/assets/kit_canvas_color.webp": [
+   11664,
+   "c6b4ce89f9edf774be5fea27b5e806eacadbce6580763207319ccb96638db692"
+  ],
+  "app/game/assets/kit_canvas_normal.webp": [
+   95292,
+   "6c47a754a539dcd44f35d6f1ea211e9a25f0abbc9e8bb828058d80d71373f4aa"
+  ],
+  "app/game/assets/kit_canvas_orm.webp": [
+   6318,
+   "bf13cad07b87725a1b0cb03fa2c0e29de330b2dfa713051dae811d2600a03265"
+  ],
+  "app/game/assets/kit_castiron_color.webp": [
+   12688,
+   "74271b270337a46113f923edc8e8d5a06c6e91e6cfe7c660d44327852cb179bd"
+  ],
+  "app/game/assets/kit_castiron_normal.webp": [
+   19106,
+   "3cdaf06cd2e2765e8d43037c54561ca6d5afe2c1080551406b448d1aa1e9ad2a"
+  ],
+  "app/game/assets/kit_castiron_orm.webp": [
+   26390,
+   "cf7daf25337810bcb6643f8f51f381fe7701e5fe64310fe0335eb712fa87c3f4"
+  ],
+  "app/game/assets/kit_chrome_color.webp": [
+   46850,
+   "a319a20ea382d054081ed44e60afd25935b1b26ace1f88d1b5423e8729cae356"
+  ],
+  "app/game/assets/kit_chrome_normal.webp": [
+   11814,
+   "e413832afe452b83af2a88eacc4cf076e6f24ca33063f0eaac9265b937d17b47"
+  ],
+  "app/game/assets/kit_chrome_orm.webp": [
+   31564,
+   "6342420f067f6364094d22e793367066e65540dc2e6ab1299dd2e357e0ffbbf5"
+  ],
+  "app/game/assets/kit_coal_color.webp": [
+   121792,
+   "d1f543f6f906b8be4bc8b446134839009bea19f7e0c54795a658282b5757f741"
+  ],
+  "app/game/assets/kit_coal_normal.webp": [
+   167910,
+   "0acfa82a336b986bd0571841a9e6dbafda1e0d741e1f276e3125545c75005760"
+  ],
+  "app/game/assets/kit_coal_orm.webp": [
+   125340,
+   "6d1210f57d69b9c2b2ddcd819b7900cef806120ca4b3739c22e667573c4fbd99"
+  ],
+  "app/game/assets/kit_concrete_color.webp": [
+   35206,
+   "5b56e8c9f0566d5fe1c868ef090eafab4be65fb088a44877a3f275e664415083"
+  ],
+  "app/game/assets/kit_concrete_normal.webp": [
+   58928,
+   "22995cbf5fb038163ca2c50e93f6e723b8aa77992ba124e19a99775b24cb1f4b"
+  ],
+  "app/game/assets/kit_concrete_orm.webp": [
+   6318,
+   "10919bda8509abe055a0db9c79430aebb630ac264a4d73b2319281b02995561c"
+  ],
+  "app/game/assets/kit_copper_color.webp": [
+   14796,
+   "4974e1f9483a642d939f888b87e19987c3fec78f701a395f1e8def2264430b14"
+  ],
+  "app/game/assets/kit_copper_normal.webp": [
+   6314,
+   "915e58b6273c14ee29fb766cf11678b8923fdf42269b0d6d326d942f3ffd292c"
+  ],
+  "app/game/assets/kit_copper_orm.webp": [
+   11218,
+   "1cc622d911a209b5db48eaca0b55dc953741609add0e109c15b9228267435f23"
+  ],
+  "app/game/assets/kit_crate_color.webp": [
+   27436,
+   "8b3db0bf37e393c6822b99dfa360eae87eb9dda43bd7d96cb7bf4b74dedc4aa6"
+  ],
+  "app/game/assets/kit_crate_normal.webp": [
+   40614,
+   "5fb1aa8b33af60bd524ce86afea77fbc424134d6146b48978887afec4bea8ca3"
+  ],
+  "app/game/assets/kit_crate_orm.webp": [
+   16652,
+   "4a79e875dbdb8a1c4b005c8f91d4b7452f8aeb65783078ca140730fa4154637b"
+  ],
+  "app/game/assets/kit_dirt_color.webp": [
+   48618,
+   "812db98e52a0abaa58e06a1895ca270cf0f47af8104969d4fb6ce187d869a7f5"
+  ],
+  "app/game/assets/kit_dirt_normal.webp": [
+   51450,
+   "410d5b06bea372dfbc6d8b97e718def278d17bb675cbb750510880f9a5d6228e"
+  ],
+  "app/game/assets/kit_dirt_orm.webp": [
+   6318,
+   "f69bca03ede970d800c8557959526f099d6f2a468747109c737edae788f04df9"
+  ],
+  "app/game/assets/kit_enamel_amber_color.webp": [
+   49106,
+   "547101367870ac94a8cf4d012e96239391d688111f4119213108d9cb37b4e390"
+  ],
+  "app/game/assets/kit_enamel_amber_normal.webp": [
+   22348,
+   "9870fff45b00b4f550870512fa5307cd1eadae06066d58bce4df43804dd3774a"
+  ],
+  "app/game/assets/kit_enamel_amber_orm.webp": [
+   28312,
+   "ceadf979bc91ad808b0ff777d64510753eb5e3a5ed6a2fe6009ef2bc188bcb92"
+  ],
+  "app/game/assets/kit_enamel_blue_color.webp": [
+   33890,
+   "322e2f681bbcdefb60ec1904ec4839d177063f83881bde5b2cbe7eb46d19916c"
+  ],
+  "app/game/assets/kit_enamel_blue_normal.webp": [
+   21118,
+   "6ef86c0cdcafef2fcf70590bb3d7508864ce52f9ea2777d4bd5f161d835cd2f7"
+  ],
+  "app/game/assets/kit_enamel_blue_orm.webp": [
+   27310,
+   "8de5a4158059ca28969b1bda64ab2a00022c92a11aa0f6f3375e523264316113"
+  ],
+  "app/game/assets/kit_enamel_cream_color.webp": [
+   54844,
+   "4ec5747498aa34d561b1093c54b4f3cc2b2460211c590793b6d39a7417de980d"
+  ],
+  "app/game/assets/kit_enamel_cream_normal.webp": [
+   24684,
+   "0c4e18ca107256f8d28a9b8c7332673e05e33924c4259402a99d9742fcc632f9"
+  ],
+  "app/game/assets/kit_enamel_cream_orm.webp": [
+   31028,
+   "5010394c3c0484981887b836c116517cb51a21e21ff71021993023a24e721ad8"
+  ],
+  "app/game/assets/kit_enamel_green_color.webp": [
+   31710,
+   "db3f5cea819020d2de8b4a832a585fd6d6707b43c0cbf1cce69e9ff019208e61"
+  ],
+  "app/game/assets/kit_enamel_green_normal.webp": [
+   19494,
+   "3ea5017c325b17fc2a2b19faab326e8bedc73a6627488ae75991bddeb88e7ab4"
+  ],
+  "app/game/assets/kit_enamel_green_orm.webp": [
+   25586,
+   "122e889c0be5c39331402898d546b15c93b647c9b4f76f4720b1eda51deff0d1"
+  ],
+  "app/game/assets/kit_enamel_red_color.webp": [
+   30036,
+   "a39c981be60a28fe4a1d79760f74a50c25fc88bea0e0ac7c7c76ba75a7b09c97"
+  ],
+  "app/game/assets/kit_enamel_red_normal.webp": [
+   21062,
+   "7bc1839031697e801760ab71845d0179ce373dff51121e287796bb1387701f64"
+  ],
+  "app/game/assets/kit_enamel_red_orm.webp": [
+   27440,
+   "2f78dcf730193fca1b68c6ef9542a25e46279864c2daec61829b97c40cb449a7"
+  ],
+  "app/game/assets/kit_glass_amber_color.webp": [
+   25358,
+   "54a2ffed3218a611832ed20c7d96f7c793daf5b628e37b4ffd623fe25764f819"
+  ],
+  "app/game/assets/kit_glass_amber_normal.webp": [
+   9656,
+   "6bca3faec4722a21a42933cfbfc3b1efbadaa6c75072dcaea47da3d6078d6feb"
+  ],
+  "app/game/assets/kit_glass_amber_orm.webp": [
+   8080,
+   "213addfe868250894e909b8361812e1321153765fffff62960151854d34fc06a"
+  ],
+  "app/game/assets/kit_glass_dark_color.webp": [
+   24894,
+   "1358875e9888523a3b1753f258fc45e8160cd919790b32aa330fffb9adf03a22"
+  ],
+  "app/game/assets/kit_glass_dark_normal.webp": [
+   9762,
+   "e5cbed6261f001bec0ff695015a9040372a466dcaf4f097095938ff5aaae5b88"
+  ],
+  "app/game/assets/kit_glass_dark_orm.webp": [
+   9384,
+   "55ef5ae5bdec882d5e422af416fc3fc1e95704e52edc4fc9fe7f05e60ed95b7e"
+  ],
+  "app/game/assets/kit_glow_color.webp": [
+   5946,
+   "be942bed082be7691cf8af96a5556abb523a6662e23d77aeb8cc0cc5f6319d1b"
+  ],
+  "app/game/assets/kit_glow_normal.webp": [
+   5964,
+   "f81194644e0e1f8ad9075e091e3a0e3288839ed6b02653bb757c2982e3dece54"
+  ],
+  "app/game/assets/kit_glow_orm.webp": [
+   5970,
+   "fbbc6098f09e9da5a7050cc26515de2fc303ff8dcb5e0304c5a2e6a0bd766e0c"
+  ],
+  "app/game/assets/kit_glow2_color.webp": [
+   5946,
+   "3c9dba873ed5834e81a1036ce35c430cf92e3d0977a003708dce9d6ccc4890c4"
+  ],
+  "app/game/assets/kit_glow2_normal.webp": [
+   5964,
+   "f95f70f9bb5042e5a48f3d1efa3ebb8129fbde6fa9e6895b4b1c1526d22f8336"
+  ],
+  "app/game/assets/kit_glow2_orm.webp": [
+   5970,
+   "c5485e3d4fa5419b5152ebb44f59b4eddbcfee3d500f82176838254ea7ba84e3"
+  ],
+  "app/game/assets/kit_hazard_color.webp": [
+   78174,
+   "79162bc6b81874b2e524e148868cbe1a3321984358c30aeedcaa93aaab4660a2"
+  ],
+  "app/game/assets/kit_hazard_normal.webp": [
+   17420,
+   "74de1a7e21be60f87aeae8559a796b3a119e2451e7b2e29addfbaed5789e4904"
+  ],
+  "app/game/assets/kit_hazard_orm.webp": [
+   25922,
+   "00f6939f79a461009c96133798256bff0800453e0afdfe75e3d0e973412a53bf"
+  ],
+  "app/game/assets/kit_iron_rust_color.webp": [
+   17736,
+   "eaac9a9be3e298715cd895fab97d61eb82b83b078eb3931266f7d62c6cf51f4d"
+  ],
+  "app/game/assets/kit_iron_rust_normal.webp": [
+   23240,
+   "df2ee6f59e2742797d77ca467a5875b7664e9594d3dfb2a5105c9e664c4c6f2c"
+  ],
+  "app/game/assets/kit_iron_rust_orm.webp": [
+   22020,
+   "34bd114ff83ae8b5532e25d15d7afbb570813c3e6df0166cf7cd96975ea9c4e8"
+  ],
+  "app/game/assets/kit_lamp_color.webp": [
+   5946,
+   "1d27ceea029c7b9b878e604c17caf7e51baf1842a6758e9231b41c7e2681a0b1"
+  ],
+  "app/game/assets/kit_lamp_normal.webp": [
+   5964,
+   "915772138895511f2756a75577ec7108a6e24b6fb8561ad72e56acb046dec9f5"
+  ],
+  "app/game/assets/kit_lamp_orm.webp": [
+   5970,
+   "02a354d1496e397f33c53d43ab242f0f9c36dd930b612524e7405f319c4b5e8c"
+  ],
+  "app/game/assets/kit_paint_grey_color.webp": [
+   17598,
+   "86c40538a363ce03fc03c1c7df5e218cc59861bac943e9770c29291fcf3f7f92"
+  ],
+  "app/game/assets/kit_paint_grey_normal.webp": [
+   13992,
+   "c34fa9c82896b49847b64a0b5e3e0e198e89d94977e4ec20944cb00affeaf81b"
+  ],
+  "app/game/assets/kit_paint_grey_orm.webp": [
+   18528,
+   "00531b453f89efbca1edd2a67379a22c237f7a1aa9cc417c5d9390ac6bb6bba1"
+  ],
+  "app/game/assets/kit_plank_red_color.webp": [
+   27850,
+   "2c3da6c66da73da1d125601f2df75e17ef77ed718b5fcabfd7a7cab889045102"
+  ],
+  "app/game/assets/kit_plank_red_normal.webp": [
+   38486,
+   "c9e94413cd57f065b77580e22a0b7ba68a40220b100d86c8b9a420d07149a1c5"
+  ],
+  "app/game/assets/kit_plank_red_orm.webp": [
+   12592,
+   "471950d6c5297c09746893e24f00cfbb3f8bc2b2966968e81c8ed9619ed7dd91"
+  ],
+  "app/game/assets/kit_rubber_color.webp": [
+   11832,
+   "9b13fd07861a3e0b45c7ff09871fc483958f658313817208e6881808c4d3844a"
+  ],
+  "app/game/assets/kit_rubber_normal.webp": [
+   10912,
+   "676675fad52dfcab8dee63d83b3dc11736e055faabbf92fdf0975347673e89ed"
+  ],
+  "app/game/assets/kit_rubber_orm.webp": [
+   6320,
+   "55519d6211f4dd80d822a913781a47af8c21c468a567d8ca6919ba8bc56b6ec2"
+  ],
+  "app/game/assets/kit_steel_black_color.webp": [
+   19658,
+   "75412cb0e326df0a340f6a55f110b7fbf1e97033054c3ffc8e65f9ce142fe2ac"
+  ],
+  "app/game/assets/kit_steel_black_normal.webp": [
+   18170,
+   "bc2e00413c55d1832086ff8049e1a1828559e45b5e0418f556639df497cf55c6"
+  ],
+  "app/game/assets/kit_steel_black_orm.webp": [
+   14386,
+   "d1f2800c2bb1ca2e853565d2a9ebf38c3e7e6a148385ffa42c24abd764d5259f"
+  ],
+  "app/game/assets/kit_steel_grey_color.webp": [
+   16036,
+   "9a789d32011d419ea1ce9ba1ea6d2216aa41f0b6f9ede491ab0c9b29fd3bb6f0"
+  ],
+  "app/game/assets/kit_steel_grey_normal.webp": [
+   15556,
+   "80d22743bfcd2ec6b8a35d53e42ebba56f8e601515d4b7812281620991341d04"
+  ],
+  "app/game/assets/kit_steel_grey_orm.webp": [
+   12156,
+   "a91ba8da43d842790c98d5687eabc5e5f636dc65e478f6ccc5967d7da1586da3"
+  ],
+  "app/game/assets/kit_wood_dark_color.webp": [
+   27228,
+   "a4f2848c2cd0439d598c00a41e1c353e5e634795ab2a2245d40bcb6f93a6efe8"
+  ],
+  "app/game/assets/kit_wood_dark_normal.webp": [
+   37420,
+   "1ece44281d0b8725da9d3152ab81158876ea329e19fd90f7727fa2327230b448"
+  ],
+  "app/game/assets/kit_wood_dark_orm.webp": [
+   16962,
+   "de7b553c054a8a6516fa71b2822246838c7239d445754aab2ed994f4dc5604e3"
+  ],
+  "app/game/assets/kit_wood_grey_color.webp": [
+   28694,
+   "91aae27111c1802ca1bbc0058c27ed10c5c311b96b4b6d669d54eb6c47a278c6"
+  ],
+  "app/game/assets/kit_wood_grey_normal.webp": [
+   50522,
+   "9556a2800a394e5511fd094a6edd3d958df21523dc279688b3156b8b6c7e8364"
+  ],
+  "app/game/assets/kit_wood_grey_orm.webp": [
+   19212,
+   "a71f143485990487becbcc180bc7bd0c022a9572c4142e6a5470880c6682308d"
+  ],
+  "app/game/assets/kit.json": [
+   1026395,
+   "a669020be5ca69d78d921fa45bd1e212c568a500f7c78ecf9f452ae2880c094a"
+  ],
+  "app/game/assets/kitperk_enamel_ochre_color.webp": [
+   54776,
+   "e7894c8f3d6a16c76504d7865157cff0faa060b2d00e65995d46831a405da177"
+  ],
+  "app/game/assets/kitperk_enamel_ochre_normal.webp": [
+   22164,
+   "3cc8188f7360159d8a8b0654368e55a52cfc1f92803e5ea2cc6027d4948b15c4"
+  ],
+  "app/game/assets/kitperk_enamel_ochre_orm.webp": [
+   28166,
+   "5b89a92f1e378d00ed3080cbe4a4a01d2410fb18d334210b58fe90147c7ce86e"
+  ],
+  "app/game/assets/kitperk_enamel_olive_color.webp": [
+   24654,
+   "51b6cc117a56e9d030e265c4b3a2fd594be105a1827084edde13e21b593c988d"
+  ],
+  "app/game/assets/kitperk_enamel_olive_normal.webp": [
+   21668,
+   "239ab7ccc8a12542729305a6fb027485e12c2db583d851ad9a8b26ed7e45ccff"
+  ],
+  "app/game/assets/kitperk_enamel_olive_orm.webp": [
+   27460,
+   "855da94d75d312191bd64ec8a933b54210c77992c729411ba3959dee8ab14b9a"
+  ],
+  "app/game/assets/kitperk_enamel_purple_color.webp": [
+   24208,
+   "2458ca235f66f6568955fded6d80557e990c53078301593279454aa541fde602"
+  ],
+  "app/game/assets/kitperk_enamel_purple_normal.webp": [
+   20366,
+   "fe27aea7d09bf561af3e09ae230976c017fe0d0d3bfc3dbec5493193e57fadd4"
+  ],
+  "app/game/assets/kitperk_enamel_purple_orm.webp": [
+   26226,
+   "7998abded12f82eeb9f52a332d35c23fbc14f587e2a6d1eec221cdd75dad10ff"
+  ],
+  "app/game/assets/kitperk_enamel_teal_color.webp": [
+   38222,
+   "48d16d97f6e4914035f86ce2f1ba22ae464f2c9162207ac528643ae0abc0a80a"
+  ],
+  "app/game/assets/kitperk_enamel_teal_normal.webp": [
+   22770,
+   "1d6517887804d1641f8c2e4bc96bf8a3efa6945715b6183c0cf5eb18c9bd49f7"
+  ],
+  "app/game/assets/kitperk_enamel_teal_orm.webp": [
+   28670,
+   "0e880795c6a29ebdbfea1280527833341560e2b3c2f98e788ef23b2822842058"
+  ],
+  "app/game/assets/kitperk.json": [
+   459279,
+   "c591ecde601b810834eb6d3fdbcf92ab9c2e6cd5f4d9c273deabe9ec244b2bbe"
+  ],
+  "app/game/assets/m1919_color.webp": [
+   98754,
+   "edad89b2d379d23c2bdf205a65439aa3aaf9fd0cd65ba491f84366a5126dd3e9"
+  ],
+  "app/game/assets/m1919_metal-m1919_rough.webp": [
+   140370,
+   "6598924ad3fe317dd4c49746c9a2f4354a37646e324b3abb94dd5c2c57e8d1f6"
+  ],
+  "app/game/assets/m1919_normal.webp": [
+   12042,
+   "d113280ceef28bd7e8792f6c1cca7eaecac48cd66b2200a7c947bcf6dcf6f0c3"
+  ],
+  "app/game/assets/m1919.json": [
+   257799,
+   "65802b9d805e70ab16dc02d5f3342d2eddc5ff539f8411a765e6d00feaa98077"
+  ],
+  "app/game/assets/m2flame_color.webp": [
+   100814,
+   "cd3cee9500154ef87ddf2b7e7d9783447479f8b50fac78e7eb91c114cb2523e6"
+  ],
+  "app/game/assets/m2flame_metal-m2flame_rough.webp": [
+   136606,
+   "1031b50bd09d66a05729253ca74a6dc2448549a95deeadc5b79cd830ad90c886"
+  ],
+  "app/game/assets/m2flame_normal.webp": [
+   8092,
+   "6ad2733e6fc5001661aaffe0d9476bb4ce0d205d0b5f8423770cd486fdc55deb"
+  ],
+  "app/game/assets/m2flame.json": [
+   172183,
+   "889f0389972284c61446d579fe1a3f2d54c25ee9a359a467db05a11fd85579ba"
+  ],
+  "app/game/assets/mg42_color.webp": [
+   92134,
+   "fb7d35bd5ee1c746ae7839aa61d602551ae0025bc42ec66c1f17bd0abbb3a2ff"
+  ],
+  "app/game/assets/mg42_metal-mg42_rough.webp": [
+   112314,
+   "eff69b6b7ea6a6409549b53113f75250846e08f47222fbecb9b73374ed6b1411"
+  ],
+  "app/game/assets/mg42_normal.webp": [
+   8050,
+   "7c1d7db93903ecd078592dc131b35c8f1b4fc8d460b3b3a523b9afe4f8798169"
+  ],
+  "app/game/assets/mg42.json": [
+   250216,
+   "b0b669b8ec0ced779abe052203351923dd90b4869c663b06fcd96d6985555497"
+  ],
+  "app/game/assets/mp40_color.webp": [
+   102754,
+   "e17cbfc0d3d1a91e5e2b5a8f83fd2634c438c3889bc842ef329f26f18941c2bc"
+  ],
+  "app/game/assets/mp40_metal-mp40_rough.webp": [
+   119454,
+   "f9913b948105ac596560c4be495a9d699e09aee0a74b3af1940609418022072b"
+  ],
+  "app/game/assets/mp40_normal.webp": [
+   8372,
+   "31bafc440a28892bb69c6d8d3783f00e35799cbf7f38ecf7b4377c1d02fc2b82"
+  ],
+  "app/game/assets/mp40.json": [
+   195762,
+   "cc55c8194b95eeff03c2a0753749393f62d79297336ae46e6a406fe7da0e788a"
+  ],
+  "app/game/assets/panzer_color.webp": [
+   82430,
+   "742909d9583670eacb7cb76c4094140c4004e75370b358276ffd6b2cfad8b9f3"
+  ],
+  "app/game/assets/panzer_metal-panzer_rough.webp": [
+   86008,
+   "e1577ba3a40810b24e48f40b8d4d7b8a9836b2fea69799e70cc74959d9967f8f"
+  ],
+  "app/game/assets/panzer_normal.webp": [
+   8188,
+   "a7ca6cc58906384c75f51bf24f047fd86b52aef08f8afe91d9d98fab42441c98"
+  ],
+  "app/game/assets/panzer.json": [
+   201967,
+   "ac5faf6d0c95b6ee3c4d55f4284fd51210a495c3c8a9256ea3067efd2b1470b6"
+  ],
+  "app/game/assets/pistol_color.webp": [
+   93108,
+   "647a2934b80e3db6bb449e4910bdd4027602734f6af42fba14ff4f465100a200"
+  ],
+  "app/game/assets/pistol_metal-pistol_rough.webp": [
+   82956,
+   "c4015cac471e4d2950500af290713fae63f9c4fd3d6a3e698e7e0b8bfa119e67"
+  ],
+  "app/game/assets/pistol_normal.webp": [
+   9430,
+   "e8633f3f5cea889b722f27d2a0031abde28314486bf5bfb86433819bfc956089"
+  ],
+  "app/game/assets/pistol.json": [
+   175931,
+   "780d7e06b4faa055761857b3f2cfbac33a271c26c50eeb48e188279a56108e18"
+  ],
+  "app/game/assets/ppsh_color.webp": [
+   117216,
+   "a13a28ee8401e3cc3d7716f396ef5b4f9fba32399894fdfb439c5255f175141c"
+  ],
+  "app/game/assets/ppsh_metal-ppsh_rough.webp": [
+   85152,
+   "5b9c84ed1caffbf220bcbee47a0b30009cff8b7bc51b9aa4406c90266826f6d2"
+  ],
+  "app/game/assets/ppsh_normal.webp": [
+   8672,
+   "03ade58cc455de74e21e5f6d565a162ea537d16c9835e0d67b2468b64db3b056"
+  ],
+  "app/game/assets/ppsh.json": [
+   215709,
+   "769d5a2fd9424a2b15da166668abe88dcab8c261e2b411aac1bdc2757295dc12"
+  ],
+  "app/game/assets/previews/asylum.webp": [
+   12916,
+   "502736ff7c359a4ce86ba192a7151e791f0d43fad08c729b9ac38ffe97fe9289"
+  ],
+  "app/game/assets/previews/bunker.webp": [
+   13840,
+   "adbf6db5ca5b7d501160c69189f6140ab4e26a4e368564010834bf9236208239"
+  ],
+  "app/game/assets/previews/farm.webp": [
+   14616,
+   "67fb887f5d6fccdc87ceea61cfd996eee10c235822beb82be41a321dba4609f7"
+  ],
+  "app/game/assets/previews/kino.webp": [
+   16714,
+   "bb4fdab0598574a484c132ce7569bfb6362217c582e6d46101cc695167878d53"
+  ],
+  "app/game/assets/previews/marsh.webp": [
+   10594,
+   "2f214afc30908a94da7cb35aed5775b562879f1b0b7052157230b97b8f78a74b"
+  ],
+  "app/game/assets/previews/moon.webp": [
+   17048,
+   "8077906e61db85c6c294a571b7469001bc26e1bdc85a7907de56468da1883cd9"
+  ],
+  "app/game/assets/previews/rail.webp": [
+   18520,
+   "b371e69aac5fd2bad39561d56277f86de425ca34d40bcea3f256af817e7c8d33"
+  ],
+  "app/game/assets/previews/river.webp": [
+   11742,
+   "c401737aad8814da76890fb15cea16b6bda8201c611bdddd53e5835d7c69f1bd"
+  ],
+  "app/game/assets/previews/village.webp": [
+   20118,
+   "eb5551036f6d3bc933a1e24f7fe2602eaa3167cc9bbb3a63d8f5e9b24233c90f"
+  ],
+  "app/game/assets/previews/works.webp": [
+   14450,
+   "dc35485531a669525ecdb76dd9496da0133a1523916396be9c3096c3ebeb33f9"
+  ],
+  "app/game/assets/previews/foundry.webp": [
+   17204,
+   "9da8bc307a63379f53ac1c6ff6d2a018dc7a0d2269ac645a8c2837b825697090"
+  ],
+  "app/game/assets/props_awning_color.webp": [
+   13520,
+   "4b6cb735cb814b46b30a898a9109ccbe4b1700ab98b62c8fd4797ee3478fc0e3"
+  ],
+  "app/game/assets/props_awning_normal.webp": [
+   6840,
+   "52a7726a39e8c1726d5afaa3e0a9be4273ea05847afc98cd509f62895855f464"
+  ],
+  "app/game/assets/props_awning_orm.webp": [
+   6318,
+   "f0545aaf5eb840f74e22af4316ac54158061c4f687e8a251e84a27e069dfb612"
+  ],
+  "app/game/assets/props_bark_color.webp": [
+   28510,
+   "0d353f32c812e3cb73d9e3135e62b45687f6e3394a930f13e020c96827f92c40"
+  ],
+  "app/game/assets/props_bark_normal.webp": [
+   46224,
+   "c718c90002b5fa1d8a06d3e94ea4ae1c78a98ef01f0e5fee80047d052eff7177"
+  ],
+  "app/game/assets/props_bark_orm.webp": [
+   6318,
+   "79ab2d8cd421e3255ecc555f292d3e789efed3d97111339d292be88544741d26"
+  ],
+  "app/game/assets/props_brass_color.webp": [
+   17532,
+   "289558a3ea641209b9444ad367600dddce95df61504951157cbf816bf494c828"
+  ],
+  "app/game/assets/props_brass_normal.webp": [
+   6314,
+   "c5f88d91ff7183828c9d3953d06735d2ee7d82310ad7da43950163bfec6ed414"
+  ],
+  "app/game/assets/props_brass_orm.webp": [
+   11694,
+   "83014265348cd05b079e7e7d083781ab1913d0d3bd34eafafb1fa77eff0cb018"
+  ],
+  "app/game/assets/props_brick_color.webp": [
+   27158,
+   "102db2fd1b9c85f84a2d0b0a0b7ca2bd107a41c43fd7b8165c29b9aeded1119c"
+  ],
+  "app/game/assets/props_brick_normal.webp": [
+   31226,
+   "d2b37c6816eaadd8628ef0841b948aa7f62abe57636865888e881fbf3731551b"
+  ],
+  "app/game/assets/props_brick_orm.webp": [
+   8196,
+   "37447d4b4b46aa0f243df3d6bcb14cfdeba964e2f7278a512a6dbba4f091f8d0"
+  ],
+  "app/game/assets/props_burlap_color.webp": [
+   20560,
+   "47995b665ba8fb65014d53e572482f1663cd457b77a6904707cb2cf280c9496e"
+  ],
+  "app/game/assets/props_burlap_normal.webp": [
+   67742,
+   "148636cf04776c29123ac8694dc6b184c79e750542b3e2f550e6fb952376dc1f"
+  ],
+  "app/game/assets/props_burlap_orm.webp": [
+   6318,
+   "00e4499f34e47980d7584590a59cab6407d31dd91365ff3df3b8570eaf1d15f8"
+  ],
+  "app/game/assets/props_burnt_color.webp": [
+   19970,
+   "b56ea27e9f758b0f73e49034167b45751f948f38a16085f432eed1ff6f75825b"
+  ],
+  "app/game/assets/props_burnt_normal.webp": [
+   50610,
+   "4a8256935fd183aa76a6f3f370cac4645011dcc44fe705e0b02c5fa9e3552562"
+  ],
+  "app/game/assets/props_burnt_orm.webp": [
+   14612,
+   "669073adafa1717f513924f373cbf093a6cb813cabfc303fdfe211e74a5d074c"
+  ],
+  "app/game/assets/props_canvas_color.webp": [
+   11664,
+   "2ea5bf6cd3533b331bdef530cf6c9ad1198592afa5788f9d41da07391c52f2da"
+  ],
+  "app/game/assets/props_canvas_normal.webp": [
+   95292,
+   "2f3ad042a74ec9fc59fa11f6f413294d0c5e622c6e6655dfa4018156868fca85"
+  ],
+  "app/game/assets/props_canvas_orm.webp": [
+   6318,
+   "6512becd102c860ba9eeff470c8c22767a92df84b0b30bd51722432a4c8e39fd"
+  ],
+  "app/game/assets/props_coal_color.webp": [
+   121792,
+   "182cc95661f963e0b301c353349a4873d016eda8b14beba59eb99d120fbe1bf7"
+  ],
+  "app/game/assets/props_coal_normal.webp": [
+   167910,
+   "f0b1ec98976caa614d8e724b483a52d884ab9106f7daf96b022e3bfdb9833ad2"
+  ],
+  "app/game/assets/props_coal_orm.webp": [
+   125340,
+   "04a887f3eec88cd3ede40bfcf924677581839612357cf9eef43014a8ef29c8ec"
+  ],
+  "app/game/assets/props_concrete_color.webp": [
+   35206,
+   "78702b705155a90965b2b2753429947ba06021829c8ce0f8a28014a2511f76d6"
+  ],
+  "app/game/assets/props_concrete_normal.webp": [
+   58928,
+   "256ad083ddd726ea63406ab223a9b593511c5006d0bea69baf09a91ad70973f1"
+  ],
+  "app/game/assets/props_concrete_orm.webp": [
+   6318,
+   "875406c342ddaeb7c2c4b951092c868f61db928db10bb4fa0d8a46be8357d99d"
+  ],
+  "app/game/assets/props_crate_color.webp": [
+   27436,
+   "7287d1cbdd302e1da46d35e9d78b426fae27055b4ecc4f5f24c6ec130053496f"
+  ],
+  "app/game/assets/props_crate_normal.webp": [
+   40614,
+   "4609d35ed7c02ed8c2e5e79a0ca3240fb11b2801f868c80aae2d1b3ef435ca93"
+  ],
+  "app/game/assets/props_crate_orm.webp": [
+   16652,
+   "8b36b77f68669e22fa699b0362d4ec3c4088ef33f90a7270e6343a4a48c0911c"
+  ],
+  "app/game/assets/props_dirt_color.webp": [
+   48618,
+   "f13b452275af72dbedab85c7240b245d8352e46f067e0700b846ec727f551901"
+  ],
+  "app/game/assets/props_dirt_normal.webp": [
+   51450,
+   "4695dff80b5efd7ae3d694649943ada66e1acc4eeb254ed43a908dc893de3bce"
+  ],
+  "app/game/assets/props_dirt_orm.webp": [
+   6318,
+   "9de832f8f7ece39d1fc98982d19cebed8af2c66449c58d9906fbe65d759607d9"
+  ],
+  "app/game/assets/props_enamel_color.webp": [
+   33632,
+   "6e50f03417bed6b024312ea057a26d2493b98a6719339bda46ead8ad295747da"
+  ],
+  "app/game/assets/props_enamel_normal.webp": [
+   14982,
+   "1dd39be39962e4fcd6ea9edea0860df77fe3f9738106b49ce07fa812af33ea10"
+  ],
+  "app/game/assets/props_enamel_orm.webp": [
+   19726,
+   "f6db1557e857604dbd73fe53bf03716f1da3cae30f7bdb6b9cc055e49ee7c0ce"
+  ],
+  "app/game/assets/props_granite_color.webp": [
+   229228,
+   "9dbe49398afc2537bf11d46451cc84c23d9017798c09624cdfd936919221047c"
+  ],
+  "app/game/assets/props_granite_normal.webp": [
+   8618,
+   "c305628df34f5a04a1ea331a8b3f021939e15a2176512475571ac82c91868987"
+  ],
+  "app/game/assets/props_granite_orm.webp": [
+   7486,
+   "0d8f506226bab5790f2ac7e13768c9303f2fc4a89e7bb767399df8cf124f67a0"
+  ],
+  "app/game/assets/props_iron_rust_color.webp": [
+   17736,
+   "50ca24b83d5ce9eec9c769869072ed182d7f9c8cb69f1b1d3ad3e5d19f979806"
+  ],
+  "app/game/assets/props_iron_rust_normal.webp": [
+   23240,
+   "c1130c8a32fad41282908c5a9a368f3eadd83f838e1f77e8d96f871ea1403601"
+  ],
+  "app/game/assets/props_iron_rust_orm.webp": [
+   22020,
+   "89fc26ec7a0cd1ddd3202304932c753903e350a0f833451d24b66b9ab423ae61"
+  ],
+  "app/game/assets/props_leaves_color.webp": [
+   44264,
+   "47340adb2a7e46a9b8cf5c43c08485b03cfd21a26e673ef7e61fd60bfc757e83"
+  ],
+  "app/game/assets/props_leaves_normal.webp": [
+   30514,
+   "86df72a485c9f3c4cea8d077eb9aef5651916e0559a8b31ae8f0f28843299979"
+  ],
+  "app/game/assets/props_leaves_orm.webp": [
+   6322,
+   "88a245afd051076667e809ed0a3252a8bfb5788ea8eb3b2255487fb08985e1ec"
+  ],
+  "app/game/assets/props_paint_grey_color.webp": [
+   17598,
+   "97a976ce49bfba26388f3eb4e23788cd4bafd33da19458afa8a6fb3f7d366187"
+  ],
+  "app/game/assets/props_paint_grey_normal.webp": [
+   13992,
+   "4b043dec8a946d701716955e9d43c5ad64ca37110427c944cec1eed2da230ac1"
+  ],
+  "app/game/assets/props_paint_grey_orm.webp": [
+   18528,
+   "23d2afa2d2f3043d8fc3cadcd3287b7c140ff8a8a6f1f46acea54239f01b81f5"
+  ],
+  "app/game/assets/props_paint_olive_color.webp": [
+   16730,
+   "51ee0f33275a1ecd5ebb36a04cd39543b0331fd77249913c8ddd0fc05ce8582a"
+  ],
+  "app/game/assets/props_paint_olive_normal.webp": [
+   13804,
+   "4c1a31b1df84274bb150a99e842e9523d5b3d48b483b507406dfc34ae9d9dc7f"
+  ],
+  "app/game/assets/props_paint_olive_orm.webp": [
+   17950,
+   "c5855b1aa971bc8461a1bccfa3223aaa6d2739ac66f27749885ef070f370930d"
+  ],
+  "app/game/assets/props_plank_red_color.webp": [
+   27850,
+   "2206d857657059bfb822c4eabf3ca0a1193d14335da3de8ad36eb1e5cf6464ee"
+  ],
+  "app/game/assets/props_plank_red_normal.webp": [
+   38486,
+   "e13143c8af1c42d02095b7692d8f45c49df6ca5e13601752e861e74d203910ba"
+  ],
+  "app/game/assets/props_plank_red_orm.webp": [
+   12592,
+   "51934a6385a040b2da7301ce256b606d4c4d6ba167dcea7d41a3c83f6358e11e"
+  ],
+  "app/game/assets/props_poster_color.webp": [
+   29798,
+   "5c184170f30e63bd0cd08e512d028518f724efc125096007b0455a87d56d91ad"
+  ],
+  "app/game/assets/props_poster_normal.webp": [
+   34128,
+   "a3706344b5d91cb68f949127a378f44fb63f31e3f408fecbbe597d3903718a6c"
+  ],
+  "app/game/assets/props_poster_orm.webp": [
+   6320,
+   "f59e31744502c37d961b3d10c3d12273cf5acadfaed76846d88f1b4fe3c0a4e4"
+  ],
+  "app/game/assets/props_rubber_color.webp": [
+   11832,
+   "7eac87558908b4fc2a06d5d2e42638f5990ff97ffc49e227d59c664c2f9b2ed3"
+  ],
+  "app/game/assets/props_rubber_normal.webp": [
+   10912,
+   "906ce27fc63c5bc8fec2d69eb03a6443eb6382a884f1ee2f60f8014d9d796c1a"
+  ],
+  "app/game/assets/props_rubber_orm.webp": [
+   6320,
+   "0cfed1f008c4b07eec7ab99281944ae0262759e39817a4b8225268fda0777b85"
+  ],
+  "app/game/assets/props_steel_black_color.webp": [
+   19658,
+   "e78c6a4660a33ebd5488350a788d9aa118453c768079c96c11e03d8b3c45fb63"
+  ],
+  "app/game/assets/props_steel_black_normal.webp": [
+   18170,
+   "4be1188b5b4c9e17f3b524651168cafe07ee172262a791dda8001d4ea72c7bf9"
+  ],
+  "app/game/assets/props_steel_black_orm.webp": [
+   14386,
+   "e4338d7fa8448b03acb8ad924e987984c91f7608a2616e143e786858dfb4df00"
+  ],
+  "app/game/assets/props_steel_grey_color.webp": [
+   16036,
+   "bb13596cc90c5d7a697be05ff1a65478a10b75bf65a951080bb9fc5335394b43"
+  ],
+  "app/game/assets/props_steel_grey_normal.webp": [
+   15556,
+   "01affe44aa46a5f8da1b1cbd03cb95b558fb5daa7bfc4b8ef15db391734c22b2"
+  ],
+  "app/game/assets/props_steel_grey_orm.webp": [
+   12156,
+   "9f3b9ddc3a76efc03905405251ca5d4cb5434b87e0199508c506fd17ba5648c3"
+  ],
+  "app/game/assets/props_stone_block_color.webp": [
+   19538,
+   "468c68e94b8743c9207322506c43091802a1102f57b51ff035fd537fcbd8888e"
+  ],
+  "app/game/assets/props_stone_block_normal.webp": [
+   29670,
+   "8ced9fff1f3c296502da824e34dca78a3d9d880bf27cd4a75c3a74fdcc4c75ff"
+  ],
+  "app/game/assets/props_stone_block_orm.webp": [
+   8244,
+   "a41d69d94ddff60744faf8c44be6c0da35d1aa84876141f40a9063aede68f5d9"
+  ],
+  "app/game/assets/props_straw_color.webp": [
+   37764,
+   "ada25202270dc58fbd5f58a73bc283297fdb0ff14c7f4ada16161e74df198978"
+  ],
+  "app/game/assets/props_straw_normal.webp": [
+   67540,
+   "39bd1a3ccb55cdaa56c69b577fc7b735eef8b4fe300738b751e18b9c18a9b9ca"
+  ],
+  "app/game/assets/props_straw_orm.webp": [
+   6318,
+   "cda3627d90dafa7d12c4cb5007a1ef54155b1deff12b2fba89541941ba34304b"
+  ],
+  "app/game/assets/props_water_color.webp": [
+   12506,
+   "cd7270070ed7e1153298ceaa8ebec8d9bf22e695b7a4d655eb2174ba246f349f"
+  ],
+  "app/game/assets/props_water_normal.webp": [
+   6348,
+   "e78addc7ed1b5f658843d31a0d8a8e084c64851648c6e37d563b132ad91056aa"
+  ],
+  "app/game/assets/props_water_orm.webp": [
+   9770,
+   "26651829f6ed04cf4f154fe940baa4e5435dda897dfc592b4562ec8f4069d398"
+  ],
+  "app/game/assets/props_wood_dark_color.webp": [
+   27228,
+   "672c657985f867e20408c6ae90d3d1985beb52758e09698e0db10ed2d6e97e47"
+  ],
+  "app/game/assets/props_wood_dark_normal.webp": [
+   37420,
+   "f0598b98b794fb1025a6c7c9e508f5db4e710fb8de806e1193fc1fb044bc0dc3"
+  ],
+  "app/game/assets/props_wood_dark_orm.webp": [
+   16962,
+   "db929c4de36139f9d3fb12f241602197867c6f6247d46d0c77f73edca95e8b83"
+  ],
+  "app/game/assets/props_wood_grey_color.webp": [
+   28694,
+   "5107fd0cc389ee83f7422dfd98658c8a4cf186974244765d3231b6a304ebb001"
+  ],
+  "app/game/assets/props_wood_grey_normal.webp": [
+   50522,
+   "83beb9e35a37cedcbd5aef89190cf75d57ec291ec6f06a10af96a16d88cc4211"
+  ],
+  "app/game/assets/props_wood_grey_orm.webp": [
+   19212,
+   "2e141d5c733935208b8de6cc0e793330eada6cf8048a155a9b1779418a346f3a"
+  ],
+  "app/game/assets/props.json": [
+   3290886,
+   "9852350e3dc086b5cb73d11e9d7602df6203eea82535c723bbeb2ffefbef2342"
+  ],
+  "app/game/assets/ptrs_color.webp": [
+   124070,
+   "94c443bd547213f349e98fe45cee9a1fd4d6b7871d3dcc383f1d7c8f3f4fd596"
+  ],
+  "app/game/assets/ptrs_metal-ptrs_rough.webp": [
+   93312,
+   "aa83202513b53d879f12b41b334afb062ec77ff42420170a0e957c032ac406f3"
+  ],
+  "app/game/assets/ptrs_normal.webp": [
+   10184,
+   "94e1b3468af68c9c7d1b344f5b536a81f617d4f6ee6ca37ff3358e85053abb3d"
+  ],
+  "app/game/assets/ptrs.json": [
+   203102,
+   "ed838913df85404361f7a6d862e95f6f0340ab355242c45eaee3f5b3e25356e4"
+  ],
+  "app/game/assets/sawn_color.webp": [
+   110738,
+   "26317ab685e3ca47cff9c562bb70d797fc56f96c6acd4cf0ff5c072060369ba2"
+  ],
+  "app/game/assets/sawn_metal-sawn_rough.webp": [
+   91286,
+   "2a3a6fe4ffaf469728b13c28a48f0d70098d13c761f3fadf01f0820c1e463502"
+  ],
+  "app/game/assets/sawn_normal.webp": [
+   8416,
+   "37353e816119a15bb933cb4e3a52bbefc82e24165911ac1cdaca4c2e90441d2d"
+  ],
+  "app/game/assets/sawn.json": [
+   215863,
+   "7d26bf1f2e218466ef09ee1bb8790c1c984be090dff4933594312c7b21227c1d"
+  ],
+  "app/game/assets/stg44_color.webp": [
+   108694,
+   "b5a7100f645527fe8cc70475e7dc05e7014711a2f2056d2df04b63deba86412a"
+  ],
+  "app/game/assets/stg44_metal-stg44_rough.webp": [
+   100596,
+   "e52fc6f3aab6dd074a99a7b46496f15b8c47b620ce8a40c7d99269d4bf5df1f4"
+  ],
+  "app/game/assets/stg44_normal.webp": [
+   9588,
+   "421543f6863ed6db485ff88a8e6a35e3d0946064ee1cedda4c123c96865f2c78"
+  ],
+  "app/game/assets/stg44.json": [
+   209191,
+   "b3747b1266dd7a98039bc7edf016591b70491b977bf9595cfe505b2fb89bb0cc"
+  ],
+  "app/game/assets/thompson_color.webp": [
+   102574,
+   "48e6a621b4d94640734cc20b7a6a6850d489a8a05c9717df6efd395f487cef75"
+  ],
+  "app/game/assets/thompson_metal-thompson_rough.webp": [
+   68234,
+   "38439ce9353623954038c702ec1c466ec271a553fc3e9751eb487f6b6358f9c1"
+  ],
+  "app/game/assets/thompson_normal.webp": [
+   9578,
+   "54fdc81c46d5a5ecf1f0e97615022a6728b14e45c33c348617112260df4c26a8"
+  ],
+  "app/game/assets/thompson.json": [
+   187014,
+   "2babee50e54d2c29d14c08939b87a2a083d6b9a4a0f57b6b14e383df275c752e"
+  ],
+  "app/game/assets/trench_color.webp": [
+   99914,
+   "e24d71f36e2d10dfa981aa8a2688328b0484fed94fb2c74a384b1dd8b822edeb"
+  ],
+  "app/game/assets/trench_metal-trench_rough.webp": [
+   114928,
+   "dfbf105ee268397e294196f2adf0e6ab09ec9ca7c143fc5e492caafc065547a6"
+  ],
+  "app/game/assets/trench_normal.webp": [
+   8062,
+   "96e78254697b32dd53caabea516ed0eedf96b50fa40cc716d6930524a6afddae"
+  ],
+  "app/game/assets/trench.json": [
+   241640,
+   "82c1ba5861f39821c354e00b19dbfd11d32c9471e095fe98c342733fe0b26370"
+  ],
+  "app/game/assets/type100_color.webp": [
+   129688,
+   "afdf18ae1755f52469884e7f7f4fc9b999ecc1f5bc8f35b36db6235dba2de150"
+  ],
+  "app/game/assets/type100_metal-type100_rough.webp": [
+   96222,
+   "a569ac7be0b78bae19d8f794ebedb8f14c0f6b668c97c3f8884e66468aa7bd56"
+  ],
+  "app/game/assets/type100_normal.webp": [
+   9674,
+   "d3b9f50e9b84a3d9cbdaf314045530729cdff2f4d51ff5ecbca0dd87c40d0a1b"
+  ],
+  "app/game/assets/type100.json": [
+   188013,
+   "314f52e9ecbda26940d0c1da2909b58dd8fcd9fc099a2fbff8014bf6dbfa1802"
+  ],
+  "app/game/assets/wonder_bellows_color.webp": [
+   132276,
+   "d2e7c70945b19af36262077309bf0a73815e2f455ed76eae535c5b518b082c3f"
+  ],
+  "app/game/assets/wonder_bellows_metal-wonder_bellows_rough.webp": [
+   110334,
+   "f6d225ca394a4802d5ee8b346f3c1485d8e7e1a9a80fc796cdc7d9deba86e6e4"
+  ],
+  "app/game/assets/wonder_bellows_normal.webp": [
+   8818,
+   "73c850f87a804ae704f6ad2d1d41dc25ef800e53c2e16c612a299f7fa4cf6e2f"
+  ],
+  "app/game/assets/wonder_bellows.json": [
+   202623,
+   "3b412cd571b01c4399a5447728f6db0a14ba2fa277a3fbb0ea30ddd49864e5ec"
+  ],
+  "app/game/assets/wonder_coil_color.webp": [
+   137356,
+   "b465e0ce6128a6934b0001ea65091c148c7237e7190cc13a17ef96276aa21747"
+  ],
+  "app/game/assets/wonder_coil_metal-wonder_coil_rough.webp": [
+   118076,
+   "37fa45f8acb184339ab3af1e9d2910b70968e0e51ed078064dbfbc5baf702302"
+  ],
+  "app/game/assets/wonder_coil_normal.webp": [
+   8116,
+   "3b3a387e23b617d72df44457487fb6055101a90a67d2714db445a195b2d7182d"
+  ],
+  "app/game/assets/wonder_coil.json": [
+   243100,
+   "bb6763c572d6a7e809fd72d08e0219fb33c17352c55770977a002bbb2c6a5a1c"
+  ],
+  "app/game/assets/wonder_lode_color.webp": [
+   37194,
+   "84566931259bcda415df920802a6b913d01399e4f9f7cfd1f2d7123fbaa1a1fa"
+  ],
+  "app/game/assets/wonder_lode_metal-wonder_lode_rough.webp": [
+   34924,
+   "19a978f68acc1dd29df2424248300951d9088f57892668beee3ddaf5de168712"
+  ],
+  "app/game/assets/wonder_lode_normal.webp": [
+   6330,
+   "dbcd4755214ad1c216d7cf16249f92ec22d122388fcbe010f92724d0b0349160"
+  ],
+  "app/game/assets/wonder_lode.json": [
+   41667,
+   "7e17eb889f95bf69c7a387f62407e3cbdae550be36daec4d2256fcaa533531af"
+  ],
+  "app/game/assets/zombies_zv_B_color.webp": [
+   105606,
+   "0996da9a807945c72d4e3c6d002c05d7a5570b8d317fc1340127d3dae670eca2"
+  ],
+  "app/game/assets/zombies_zv_B_normal.webp": [
+   34528,
+   "3895c7103eea06fb0b74d45f8620c9b95f54a4023dbbd225704ceaf1797a9a4c"
+  ],
+  "app/game/assets/zombies_zv_B_rough.webp": [
+   180094,
+   "fecf24c0dfc07bfe4f76b5b83ca4e982c6aac7c561b6ef894d9e8241309cb1dc"
+  ],
+  "app/game/assets/zombies_zv_C_color.webp": [
+   69308,
+   "b80dda4bb7a629007f42b9fe39f33cd32d13bd90a74c7fba5f8b3dd90857ba87"
+  ],
+  "app/game/assets/zombies_zv_C_normal.webp": [
+   43180,
+   "4a39bf6bcbea041c1854ec503884c5ff9616ba27b52465a3fc2c23d31ec4d80d"
+  ],
+  "app/game/assets/zombies_zv_C_rough.webp": [
+   107184,
+   "5678ffdc54df6fea670240c89c65d50fa7734d6798d92fe4bae115553a1173a7"
+  ],
+  "app/game/assets/zombies_zv_G_color.webp": [
+   104336,
+   "97a1828473f5f70aef0573bcae8e92353de86ee67c09136f9dc24d24555379aa"
+  ],
+  "app/game/assets/zombies_zv_G_normal.webp": [
+   70316,
+   "bdcdac21c9c43eac6f295527dc6aadc4d49b84da46e24a49c3c685b6d17c8354"
+  ],
+  "app/game/assets/zombies_zv_G_rough.webp": [
+   188180,
+   "9f2d8c7318a47823dcfdf5e32effd067036a6f2976789f1641f0d92a8291928d"
+  ],
+  "app/game/assets/zombies_zv_kit_color.webp": [
+   97604,
+   "90f3442175946062ffa42c0246be1e9d28223466da2533b2f5333122d9c6f051"
+  ],
+  "app/game/assets/zombies_zv_kit_normal.webp": [
+   32200,
+   "1ccdb8a409443b5d9ac717b37b569c4e2cedc8079cc5bfff71853316f03525e1"
+  ],
+  "app/game/assets/zombies_zv_kit_rough.webp": [
+   184984,
+   "12c3d43d0151265c870b16d2be45c0c925d76930aa9ebd686fd62bc1815ed5cb"
+  ],
+  "app/game/assets/zombies_zv_S_color.webp": [
+   66384,
+   "7f1a9d2eacdc74195f0c04fe40e43b1861be5b965c4e577a6cd4075315ecddea"
+  ],
+  "app/game/assets/zombies_zv_S_normal.webp": [
+   42572,
+   "a04cf4b6e274a3043ed3bd6f27d416b37ee21faa6a31ea73903f41591fd48b20"
+  ],
+  "app/game/assets/zombies_zv_S_rough.webp": [
+   120058,
+   "6dd966d9641832b1d177f28c307aedd18ee5f8da27d27b3bd8a1bf4ed256a890"
+  ],
+  "app/game/assets/zombies_zv_Sg_color.webp": [
+   77392,
+   "9207a03cc359c4b6038159f417b56d36ea1c773f2f4b4fa1e8dbbf2cc3d71929"
+  ],
+  "app/game/assets/zombies_zv_Sg_normal.webp": [
+   45980,
+   "a6956d87c2f5f8eab10bce54319561375916daf7871a4ddf997cd14b7cfb0941"
+  ],
+  "app/game/assets/zombies_zv_Sg_rough.webp": [
+   139062,
+   "48033e554368063e57c96493e746644ae4a38c81bbbb11f4a3569bf839d09ec0"
+  ],
+  "app/game/assets/zombies_zv_skin_color.webp": [
+   75506,
+   "198e824eabf0c558e035dce051b30ea6ddc9aae898fcbea9ed47b30834d77b39"
+  ],
+  "app/game/assets/zombies_zv_skin_normal.webp": [
+   146096,
+   "06890772c63d2670a45d8bfe28d6007927503421dcf262bdc55bac6eb1454c33"
+  ],
+  "app/game/assets/zombies_zv_skin_rough.webp": [
+   96204,
+   "8b2e8743ce607815e362ee2a39aece25ca62252c3adf7e7b27266b1d146e04c0"
+  ],
+  "app/game/assets/zombies.json": [
+   6851077,
+   "6b595e9a6597b1e5e584640e3e2d7374d4316797b8e50f6fb190e2be5d5c56e6"
+  ],
+  "app/game/assets/life.json": [
+   1391800,
+   "d9ab3dd405d500a05909635f8020514aaff859bfe4136a89e1b67bf7805f2657"
+  ],
+  "app/game/assets/m3.json": [
+   447312,
+   "9970181a1e76aa0ec1acada317d47d70a17cb48a8f757cef88867bd83600ae60"
+  ],
+  "app/game/assets/reising.json": [
+   392830,
+   "3e129c136fa23b97ec3aaa2429c9c67fa8faf33152a11b2cbbdaf1487965fade"
+  ],
+  "app/game/assets/m1903.json": [
+   396287,
+   "09b012f3f348f6bbb416067a81eb4e3c0a1ebb8edc0947b54922be305d70d1ab"
+  ],
+  "app/game/assets/m1903a4.json": [
+   431044,
+   "37824a46d003f2d27466aef34555d80c8806f82a9f49790a05bb2a37d12ac40c"
+  ],
+  "app/game/assets/m1c.json": [
+   650478,
+   "7d418c283d2654064dd46812f2d6f9acde3a7d240ed18b4c7f6cde2c649fce74"
+  ],
+  "app/game/assets/m2carbine.json": [
+   483128,
+   "9fdcf42fb40df622f4ab2bee0e9cdbfd67313da1dc5ce862040a65739bc529b3"
+  ],
+  "app/game/assets/t3carbine.json": [
+   553103,
+   "9b0db63e569ef869bb0912f37be5db7a12e6c8cb3d4ca3b5c9035f3aa15c7a6b"
+  ],
+  "app/game/assets/johnlmg.json": [
+   471708,
+   "741aecf38e1eb5c9343595060dbe3bad887eb822a0035e2e89bfee720dd815b9"
+  ],
+  "app/game/assets/m1917.json": [
+   491052,
+   "0ec874088196e9157b2a073e207d65c29cd34cb98636dd74ab956f3c277f7ef7"
+  ],
+  "app/game/assets/win1912.json": [
+   463309,
+   "b4d9f68188b6042b1b2aa39439436bb75206b017b0f4d0c58a239113c2e99775"
+  ],
+  "app/game/assets/ithaca.json": [
+   417557,
+   "77549ff6cbe2a9fff8e502cca090a37213b0b28928889c74454fcb76ff9d967c"
+  ],
+  "app/game/assets/auto5.json": [
+   361781,
+   "e360cfefb8e098a73384043dad37e66fceb9606b675fe27916825d6a48a1e8f3"
+  ],
+  "app/game/assets/bazooka.json": [
+   294188,
+   "61c1068444d6018e1bf3d7f5805fc957e82fb2638595fbca750ad3f9e9f17fe4"
+  ],
+  "app/game/assets/magnum.json": [
+   415802,
+   "8781c32e66e7aaa811d4c661147de3023f3a9f07d38740d0da94d26439e68d12"
+  ],
+  "app/game/assets/johnson.json": [
+   488846,
+   "4b190f1f55db1e51a0baafe1ca47a8de31204470778597560b8ca15c236faaf8"
+  ],
+  "app/game/assets/garandgl.json": [
+   507208,
+   "6dfce24ac75ec423d18dfeb2ca98d3ba0cfb55bb988edf2ca35d4e63670217ac"
+  ],
+  "app/game/assets/sets.json": [
+   3970515,
+   "a2af4cd7f2c2a9052e61bbed2ceb069ad0b3a135f76a9e0a1bb84687581450c7"
+  ],
+  "app/game/assets/foundry.js": [
+   52488,
+   "8ae1643ea1f26a8e762cb1bcb05afcb6a333852cd013f69e28d6c6f892f2fe5f"
+  ],
+  "app/game/assets/traps.json": [
+   3129832,
+   "e07e17037495f40962d36077f85400fb54c03266bb94722cdd800908d2dda616"
+  ],
+  "app/game/assets/edge.json": [
+   2321887,
+   "545fd8c6676e3578f2d41cb4088ffa8d8a8e20e086e5cb1d5e6c5235dde65a14"
+  ],
+  "app/game/assets/gunrec.json": [
+   382647,
+   "9fcde128f10d6ead8ff866abaaac04398275692dccbc606e3711c63701ab5c0c"
+  ],
+  "app/game/assets/zmocap.json": [
+   32543,
+   "d3156e3030284821f4c07b46455e0b014988b6c9d8aaf7a7d3393f455a90e77d"
+  ],
+  "app/game/assets/guns3.json": [
+   9974383,
+   "7531c7254ba9510f38c9691358cc5152aafe437c476aee69c95801b8bd22b40e"
+  ],
+  "app/game/desktop.js": [
+   9368,
+   "9f15a06c76fa17eede8c0212ebe1863b749e89bf5f3409e7d3cafe5d2955ce12"
+  ],
+  "app/game/index.html": [
+   3291193,
+   "3ddf2f1f3d6cce44a4125e60ea39095883b36c728e16497f241e8aa55cc6b751"
+  ],
+  "app/game/vendor/fonts.css": [
+   314,
+   "500fdddc57b8828646b8ccf7a61edafc555c549d2da7a2eaff7524f179359941"
+  ],
+  "app/game/vendor/permanent-marker-latin-400-normal.woff2": [
+   29564,
+   "4884fec2c73aa52a2461073c1b87d1ceb80f400520391b43f97ca7d3c39eeb24"
+  ],
+  "app/game/vendor/special-elite-latin-400-normal.woff2": [
+   53296,
+   "770493d84cbb753cd0573d0f014550583138f40469d137e310d239593a1949d8"
+  ],
+  "app/game/vendor/three.min.js": [
+   603445,
+   "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2"
+  ],
+  "build/icon.png": [
+   72770,
+   "379e1be28f5a89792bfd24b86bd0c84995393df895b6d40d2caddd139a6435d2"
+  ],
+  "package.json": [
+   2194,
+   "65a8678dfbc482441ffadc262d89b82af428bbf78ddc32b2b94ce7d42001eddf"
+  ],
+  "src/main.js": [
+   8428,
+   "103271b5bdf40e446ec4a47855c4528b5f8418d4956c818817e11c32d12c9eb8"
+  ],
+  "src/preload.js": [
+   1682,
+   "195a874a27cf067ca28dab502846806e2bd64683aa82ae0c1bb6d28bb4dca137"
+  ],
+  "src/updater.js": [
+   18139,
+   "0fb8c08cd24f795ee697da13c8a14795905d85ac67448a27738eeda61fa4816b"
+  ]
+ }
+}

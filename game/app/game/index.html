@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.69.1'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.70.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -32790,17 +32790,141 @@ function snd9Shot(W, k) {
 }
 // the foley for a stage, by the gun in hand (family fallback: a stage the family has no buffer for uses the nearest one)
 const SND9_STAGE = { clipIn: () => { const t = vm && vm.type; return t === 'enbloc' ? 'enblocIn' : 'stripIn'; } };
+// ---------------------------------------------------------------- v6.70 reload foley per gun (assets/reloads.json)
+// Every gun's reload stages (the viewmodel's notetracks: magOut, magIn, slideRack, boltOpen, boltClose, clipIn, shellIn,
+// pumpBack/Forward, hingeOpen/Close, dry) now play a real CC0 recording of a real gun's action: Still North Media's free firearm
+// library on archive.org has the handling of 24 guns (mag out and in, slide, bolt, lever, pump, cylinder, chambering), which
+// covers the Kar98k's cousin (Mosin), the Arisaka itself, the Springfield, a Model 12, a PPSh, a Swedish K and more (sources in
+// research/gun-recordings-cc0.md). RL picks per gun and stage: the clip and its rate, so guns that share a mechanism still
+// differ (pitch, which take, which gun it came from). The 6.32 synth foley stays under it at a third of its level for weight,
+// and stands alone for anything a gun has no recording for (MG feed covers, break-action hinges, rocket tubes, energy cells).
+// Clips are decoded only for the guns in your hands (about 0.4 MB each set), so iPhones carry nothing extra.
+const RFOL = (() => {
+  'use strict';
+  // stage: [clip, rate] (rate 1 = as recorded); a second pair = an alternate take used on every other reload
+  const S = o => { const out = {}; for (const k in o) { const v = o[k]; out[k] = Array.isArray(v[0]) ? v.map(x => [x[0], x[1] || 1]) : [[v[0], v[1] || 1]]; } return out; };
+  const RL = {
+    // pistols and the revolver
+    pistol: S({ magOut: ['A_5'], magIn: ['A_4'], slideRack: ['A_17'], dry: ['A_19'] }),
+    pm63: S({ magOut: ['X_5', 1.05], magIn: ['X_4', 1.05], slideRack: ['X_17'], dry: ['X_18'] }),
+    magnum: S({ hingeOpen: ['V_9'], magOut: ['V_3'], magIn: ['V_18'], hingeClose: ['V_10'], dry: ['V_5'] }),
+    // carbines and semi rifles
+    carbine: S({ magOut: ['Q_3'], magIn: ['Q_2'], boltClose: ['Q_12'], dry: ['Q_13'] }),
+    m2carbine: S({ magOut: ['D_3', 1.1], magIn: ['D_2', 1.1], boltClose: ['Q_9'], dry: ['Q_13', 1.05] }),
+    t3carbine: S({ magOut: ['Q_3', 0.95], magIn: ['Q_2', 0.95], boltClose: ['U_2', 1.1], dry: ['Q_13', 0.95] }),
+    g43: S({ magOut: ['W_5', 0.95], magIn: ['W_4', 0.95], boltClose: ['U_2'], dry: ['U_6'] }),
+    m14: S({ magOut: ['D_5', 0.92], magIn: ['D_4', 0.92], boltClose: ['U_4'], dry: ['U_6', 0.95] }),
+    fnfal: S({ magOut: ['C_11', 1.05], magIn: ['C_10', 1.05], boltClose: ['D_13', 0.9], dry: ['D_16', 0.92] }),
+    dragunov: S({ magOut: ['C_11', 0.95], magIn: ['C_10', 0.95], boltClose: ['C_13', 0.95], dry: ['C_7', 0.95] }),
+    // submachine guns
+    thompson: S({ magOut: ['G_9', 0.9], magIn: ['G_8', 0.9], boltOpen: ['G_10', 0.9], boltClose: ['Q_10', 0.8], dry: ['G_3', 0.9] }),
+    mp40: S({ magOut: ['G_9'], magIn: ['G_8'], boltOpen: ['G_10'], boltClose: ['Q_7'], dry: ['G_3'] }),
+    type100: S({ magOut: ['G_9', 1.08], magIn: ['G_8', 1.08], boltOpen: ['G_10', 1.1], boltClose: ['Q_7', 1.1], dry: ['G_3', 1.08] }),
+    m3: S({ magOut: ['G_9', 0.85], magIn: ['G_8', 0.85], boltOpen: ['P_8', 0.85], boltClose: ['Q_10', 0.85], dry: ['P_1', 0.85] }),
+    reising: S({ magOut: ['W_5', 1.1], magIn: ['W_4', 1.1], boltOpen: ['Q_6'], boltClose: ['Q_9'], dry: ['Q_13', 0.9] }),
+    mp5k: S({ magOut: ['D_5', 1.15], magIn: ['D_4', 1.15], boltOpen: ['D_6', 1.1], boltClose: ['D_12', 1.1], dry: ['D_16', 1.1] }),
+    mpl: S({ magOut: ['X_5', 0.85], magIn: ['X_4', 0.85], boltOpen: ['Q_4'], boltClose: ['Q_10'], dry: ['X_19', 0.9] }),
+    spectre: S({ magOut: ['F_5', 0.85], magIn: ['F_4', 0.85], boltOpen: ['G_2'], boltClose: ['Q_7', 0.95], dry: ['F_23', 0.9] }),
+    ppsh: S({ magOut: ['P_7'], magIn: ['P_6'], boltOpen: ['P_8'], boltClose: ['Q_7', 0.9], dry: ['P_1'] }),
+    // assault and automatic rifles
+    stg44: S({ magOut: ['C_11'], magIn: ['C_10'], boltOpen: ['C_12'], boltClose: ['C_13'], dry: ['C_7'] }),
+    ak74u: S({ magOut: ['C_11', 1.1], magIn: ['C_10', 1.1], boltOpen: ['C_12', 1.1], boltClose: ['C_13', 1.1], dry: ['C_7', 1.1] }),
+    galil: S({ magOut: ['C_11', 0.95], magIn: ['C_10', 0.95], boltOpen: ['C_0'], boltClose: ['C_1'], dry: ['C_7', 0.95] }),
+    m16: S({ magOut: ['D_5'], magIn: ['D_4'], boltOpen: ['D_9'], boltClose: ['D_11'], dry: ['D_16'] }),
+    commando: S({ magOut: ['D_3', 1.05], magIn: ['D_2', 1.05], boltOpen: ['D_6', 1.05], boltClose: ['D_13', 1.05], dry: ['D_16', 1.05] }),
+    famas: S({ magOut: ['D_3', 0.95], magIn: ['D_2', 0.95], boltOpen: ['D_9', 1.15], boltClose: ['D_12', 1.15], dry: ['D_16', 1.1] }),
+    aug: S({ magOut: ['Q_3', 0.8], magIn: ['Q_2', 0.8], boltOpen: ['D_6', 0.9], boltClose: ['D_12', 0.9], dry: ['D_16', 0.95] }),
+    g11: S({ magOut: ['W_3', 0.85], magIn: ['W_2', 0.85], boltOpen: ['Q_4', 0.85], boltClose: ['Q_10', 0.85], dry: ['Q_13', 0.85] }),
+    fg42: S({ magOut: ['W_5', 1.05], magIn: ['W_4', 1.05], boltOpen: ['C_0', 0.9], boltClose: ['C_1', 0.9], dry: ['C_7', 0.9] }),
+    bar: S({ magOut: ['N_11', 0.85], magIn: ['N_10', 0.85], boltOpen: ['C_12', 0.82], boltClose: ['C_13', 0.82], dry: ['C_7', 0.85] }),
+    johnlmg: S({ magOut: ['W_3', 0.9], magIn: ['W_2', 0.9], boltOpen: ['D_6', 0.85], boltClose: ['D_12', 0.85], dry: ['D_16', 0.85] }),
+    type99: S({ magOut: ['N_3', 0.95], magIn: ['N_2', 0.95], boltOpen: ['C_0', 0.85], boltClose: ['C_1', 0.85], dry: ['C_7', 0.85] }),
+    rpk: S({ magOut: ['P_7', 0.85], magIn: ['P_6', 0.85], boltOpen: ['C_12', 0.9], boltClose: ['C_13', 0.9], dry: ['C_7', 0.9] }),
+    hk21: S({ magOut: ['N_11', 0.8], magIn: ['N_10', 0.8], boltOpen: ['D_9', 0.8], boltClose: ['D_13', 0.8], dry: ['D_16', 0.8] }),
+    // belt guns: the belt comes out and goes in (rounds over steel), the bolt is racked; the feed cover stays synth
+    mg42: S({ magOut: ['C_16', 0.85], magIn: ['C_15', 0.85], boltOpen: ['C_12', 0.8], boltClose: ['C_13', 0.8], dry: ['C_7', 0.8] }),
+    m1919: S({ magOut: ['P_11', 0.8], magIn: ['P_10', 0.8], boltOpen: ['D_9', 0.75], boltClose: ['D_11', 0.75], dry: ['D_16', 0.75] }),
+    m1917: S({ magOut: ['G_12', 0.75], magIn: ['G_11', 0.75], boltOpen: ['C_12', 0.7], boltClose: ['C_13', 0.7], dry: ['C_7', 0.7] }),
+    // bolt actions (stripper clips into the magazine)
+    kar98k: S({ boltOpen: ['M_4'], clipIn: ['M_1'], boltClose: ['M_6'], dry: ['M_10'] }),
+    kar98ks: S({ boltOpen: ['T_3'], clipIn: ['T_0'], boltClose: ['T_5'], dry: ['T_7'] }),
+    arisaka: S({ boltOpen: ['E_5'], clipIn: ['E_0'], boltClose: ['E_7'], dry: ['E_9'] }),
+    m1903: S({ boltOpen: ['B_3'], clipIn: ['B_0'], boltClose: ['B_5'], dry: ['B_9'] }),
+    m1903a4: S({ boltOpen: ['B_3', 0.96], clipIn: ['B_0', 0.96], boltClose: ['B_5', 0.96], dry: ['B_9', 0.96] }),
+    l96a1: S({ magOut: ['W_5'], magIn: ['W_4'], boltOpen: ['W_9'], boltClose: ['W_12'], dry: ['W_13'] }),
+    johnson: S({ clipIn: ['B_0', 1.05], dry: ['B_9', 1.05] }),
+    ptrs: S({ boltOpen: ['E_5', 0.75], clipIn: ['E_0', 0.75], boltClose: ['E_7', 0.75], dry: ['E_9', 0.75] }),
+    // en-bloc rifles: the bolt locked back, the clip pressed in, the bolt slams home
+    garand: S({ boltOpen: ['U_1'], clipIn: ['U_0'], boltClose: ['U_2'], dry: ['U_6'] }),
+    m1c: S({ boltOpen: ['U_1', 0.97], clipIn: ['U_0', 0.97], boltClose: ['U_2', 0.97], dry: ['U_6', 0.97] }),
+    garandgl: S({ boltOpen: ['U_1', 0.94], clipIn: ['U_0', 0.94], boltClose: ['U_2', 0.94], dry: ['U_6', 0.94] }),
+    // shotguns: shells into the tube, the pump, a chambered shell for the break actions (the hinge stays synth)
+    trench: S({ shellIn: [['K_3'], ['K_13']], pumpBack: ['K_4'], pumpForward: ['K_5'], dry: ['K_7'] }),
+    win1912: S({ shellIn: [['K_13', 1.03], ['K_3', 1.03]], pumpBack: ['K_4', 1.03], pumpForward: ['K_5', 1.03], dry: ['K_7', 1.03] }),
+    ithaca: S({ shellIn: [['O_3'], ['O_7']], pumpBack: ['O_4'], pumpForward: ['O_5'], dry: ['O_8'] }),
+    spas12: S({ shellIn: [['O_7', 0.95], ['O_3', 0.95]], pumpBack: ['O_4', 0.92], pumpForward: ['O_5', 0.92], dry: ['O_8', 0.95] }),
+    auto5: S({ shellIn: [['H_3'], ['H_7']], pumpBack: ['H_4'], pumpForward: ['H_5'], dry: ['H_8'] }),
+    hs10: S({ shellIn: [['H_7', 1.05], ['H_3', 1.05]], pumpBack: ['H_4', 1.08], pumpForward: ['H_5', 1.08], dry: ['H_8', 1.05] }),
+    chinalake: S({ shellIn: ['K_13', 0.7], pumpBack: ['K_4', 0.8], pumpForward: ['K_5', 0.8], dry: ['K_7', 0.8] }),
+    dbl: S({ shellIn: [['N_12'], ['L_15', 0.9]], dry: ['N_18'] }),
+    sawn: S({ shellIn: [['N_12', 1.06], ['L_15']], dry: ['N_18', 1.05] }),
+    olympia: S({ shellIn: [['L_15', 0.92], ['N_12', 0.95]], dry: ['N_18', 0.95] }),
+  };
+  const SYN_UNDER = 0.33;   // the synth stage under the recording
+  return { RL, SYN_UNDER, hits: {}, n: 0, ok: 0, failed: 0, got: {}, busy: {}, rms: {}, pack: null, loading: null };
+})();
+try { window.__nbRfol = RFOL; } catch (e) {}
+// the pack (base64 MP3 per clip) once, the clips of a gun when it is in your hands; decoded buffers for guns you dropped go
+async function rfolPack() {
+  if (RFOL.pack) return RFOL.pack; if (RFOL.loading) return RFOL.loading;
+  const url = 'assets/reloads.json';
+  RFOL.loading = ((window.nbDesktop && nbDesktop.readAsset) ? Promise.resolve().then(() => nbDesktop.readAsset(url)) : fetch(url).then(r => { if (!r.ok) throw new Error(url + ' ' + r.status); return r.text(); }))
+    .then(t => (RFOL.pack = JSON.parse(t).clips || {})).catch(e => { RFOL.failed++; console.warn('reload recordings unavailable, synth foley only', e && e.message || e); RFOL.pack = {}; return RFOL.pack; });
+  return RFOL.loading;
+}
+async function rfolWant(keys) {
+  if (window.NB_RELOADREC === false || !S_.ctx) return; const c = S_.ctx, need = new Set();
+  for (const k of keys) { const r = RFOL.RL[k]; if (r) for (const st in r) for (const [id] of r[st]) need.add(id); }
+  for (const id in RFOL.got) if (!need.has(id)) { delete RFOL.got[id]; delete SND.buf['rf_' + id]; }   // the guns you no longer hold
+  const todo = [...need].filter(id => !RFOL.got[id] && !RFOL.busy[id]); if (!todo.length) return;
+  const pack = await rfolPack();
+  for (const id of todo) { if (!pack[id]) continue; RFOL.busy[id] = 1;
+    try { const s = atob(pack[id]), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+      const b = await new Promise((res, rej) => { const p = c.decodeAudioData(u.buffer, res, rej); if (p && p.then) p.then(res, rej); });
+      // the codec's lead-in off (first sample over 10 % of the peak, less 4 ms), so the hit lands on the notetrack
+      const d = b.getChannelData(0); let pk = 0; for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i]));
+      let on = 0; while (on < d.length && Math.abs(d[on]) < 0.1 * pk) on++; on = Math.max(0, on - Math.round(0.004 * b.sampleRate));
+      const n = d.length - on, nb = c.createBuffer(1, n, b.sampleRate); nb.getChannelData(0).set(d.subarray(on)); RFOL.got[id] = nb; RFOL.ok++;
+    } catch (e) { RFOL.failed++; } finally { delete RFOL.busy[id]; } }
+}
+// level match: the recording plays at the synth stage's own loudness (RMS over its loudest 60 ms), once per clip and stage
+function rfolLevel(id, synthKey) {
+  const k = id + '|' + synthKey; if (RFOL.rms[k] != null) return RFOL.rms[k];
+  const loud = b => { if (!b) return 0; const d = b.getChannelData(0), W = Math.round(0.06 * b.sampleRate); let best = 0, e = 0;
+    for (let i = 0; i < d.length; i++) { e += d[i] * d[i]; if (i >= W) e -= d[i - W] * d[i - W]; if (e > best) best = e; } return Math.sqrt(best / W); };
+  const sb = SND.buf[synthKey] && SND.buf[synthKey][0], a = loud(RFOL.got[id]), s = loud(sb);
+  return (RFOL.rms[k] = a > 1e-5 && s > 1e-5 ? Math.min(4, s / a) : 0.5);
+}
+// a stage of the gun in hand: true when the recording played (the synth then sits under it)
+function rfolStage(key, st, stage, gain, synthKey) {
+  if (window.NB_RELOADREC === false || !SND9.ready) return false; const r = RFOL.RL[key], list = r && (r[st] || r[stage]); if (!list) return false;
+  const [id, rate] = list[RFOL.n++ % list.length], b = RFOL.got[id]; if (!b) return false;
+  if (!SND.buf['rf_' + id]) SND.buf['rf_' + id] = [b]; else SND.buf['rf_' + id][0] = b;
+  const h = snd9Play('rf_' + id, { gain: gain * rfolLevel(id, synthKey), rate: rate || 1, vary: 0.03 }); if (h) RFOL.hits[key + ':' + st] = (RFOL.hits[key + ':' + st] || 0) + 1; return !!h;
+}
 function snd9Foley(stage, gain) {
   if (!SND9.ready || !SND.buf.fl_dry_lt) return false; const g = curGun && P.guns && curGun(); if (!g) return false;
   const st = SND9_STAGE[stage] ? SND9_STAGE[stage]() : stage, W = WEAPONS[g.key] || {}, fam = W.wonder || W.gale || W.snd === 'ether' || W.flame ? 'en' : SYN8.GUNFAM[g.key] || 'rf';
   const fams = SYN8.FOLEY_FAMS[st]; if (!fams) return false; const f = fams.includes(fam) ? fam : fams.includes('rf') ? 'rf' : fams[0];
-  const h = snd9Play('fl_' + st + '_' + f, { gain: (gain || 0.5) * SYN8.FP[f].g, vary: 0.05 });
+  const gg = (gain || 0.5) * SYN8.FP[f].g, rec = rfolStage(g.key, st, stage, gg, 'fl_' + st + '_' + f);   // v6.70 the gun's own recording
+  const h = snd9Play('fl_' + st + '_' + f, { gain: gg * (rec ? RFOL.SYN_UNDER : 1), vary: 0.05 }) || rec;
   // WaW's "futz": the hands and webbing handling the gun under the first stage of a reload
   if (h && /Out|Open|Back/.test(st)) snd8Play('gear8_run', { gain: 0.07, vary: 0.1, delay: 0.02 });
   return !!h;
 }
 function snd9Tick() {
   if (!SND9.ready) return; snd9Vol(); if (G.state !== 'play' || !P.guns || !P.guns.length) return;
+  { let sig = ''; for (const q of P.guns) sig += q.key + ','; if (sig !== RFOL.sig) { RFOL.sig = sig; rfolWant(P.guns.map(q => q.key)); } }   // v6.70 decode the held guns' reloads
   // aiming down the sights and the raise, watched rather than hooked (they change in many places)
   const ads = !!P.ads && P.reloadT <= 0; if (ads !== SND9.adsWas) { SND9.adsWas = ads; if (P.downT <= 0) snd9Play(ads ? 'fl_adsIn' : 'fl_adsOut', { gain: ads ? 0.2 : 0.13, vary: 0.08 }); }
   const g = curGun(), id = g && (g.key + ':' + P.cur); if (id !== SND9.gunWas) { const first = SND9.gunWas == null; SND9.gunWas = id;

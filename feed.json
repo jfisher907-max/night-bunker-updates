@@ -1,7 +1,7 @@
 {
- "version": "6.70.0",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/f6c2ea32dd7950c574f699495e8413a6b65c5d97/game/",
- "notes": "Night Bunker 6.70.0: per-gun reload sounds",
+ "version": "6.70.0-1",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/27ed240e7fbf89c8a536b689f065f9eed45e3d2a/game/",
+ "notes": "Shows an Installing update screen and an Update complete message.",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -1984,8 +1984,8 @@
    "978fea24ecb2dee2ad5a0ca6fa0b8db0f7ad0568d0d30490adce7ac5cce462d8"
   ],
   "app/game/desktop.js": [
-   9368,
-   "9f15a06c76fa17eede8c0212ebe1863b749e89bf5f3409e7d3cafe5d2955ce12"
+   11808,
+   "a0eb43f7ea3ebff432b8e327c6489d73ab5930d933842aab5fb440e6942d2b2f"
   ],
   "app/game/index.html": [
    3303667,
@@ -2012,20 +2012,20 @@
    "379e1be28f5a89792bfd24b86bd0c84995393df895b6d40d2caddd139a6435d2"
   ],
   "package.json": [
-   2194,
-   "4bb7118c5de8d45909a3d0047ab04de20756f91b5fcde3e8416300da7878e99f"
+   2196,
+   "32b23e5722695c455c9e35e51c5655ef9a770a9c297f2eddb6cd10fa0299ff3d"
   ],
   "src/main.js": [
-   8428,
-   "103271b5bdf40e446ec4a47855c4528b5f8418d4956c818817e11c32d12c9eb8"
+   8483,
+   "d6e1f09365ce8f7872e0b9473f347f776eca7c557a338612e3d0d09ad655db42"
   ],
   "src/preload.js": [
    1682,
    "195a874a27cf067ca28dab502846806e2bd64683aa82ae0c1bb6d28bb4dca137"
   ],
   "src/updater.js": [
-   18139,
-   "0fb8c08cd24f795ee697da13c8a14795905d85ac67448a27738eeda61fa4816b"
+   18964,
+   "f30a5c408b064cb2900b5ee0249ba3dc0cd3cb76f3fe2ab2c02301dd0af0333d"
   ]
  }
 }

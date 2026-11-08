@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.70.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.71.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -6936,7 +6936,7 @@ class PostFX {
     u.bloomStrength.value = p.bloom !== undefined ? p.bloom : 1;
     u.exposure.value = (p.exposure !== undefined ? p.exposure : 1) * (window.NBX ? NBX.expoK : 1);
     u.saturation.value = p.saturation !== undefined ? p.saturation : 0.85;
-    u.vignette.value = S.vignette; u.grain.value = S.grain; u.aberration.value = S.aberration;
+    u.vignette.value = S.vignette; u.grain.value = S.grain; u.aberration.value = S.aberration; u.bodycam.value = window.NBX && NBX.bodycam && !(window.P && P.scoped) ? 1 : 0;   // v6.71
     u.bloomWeights.value.set(S.bloomHalfWeight, S.bloomQuarterWeight);
     u.ads.value = ads > 0.02 ? ads : 0; u.tDof.value = this._dof[0] ? this._dof[0].texture : null;
     u.aoStrength.value = aoK; u.tAO.value = this._ao[0] ? this._ao[0].texture : null; u.tDepthV.value = this.sceneTarget.depthTexture || null;
@@ -7032,7 +7032,7 @@ class PostFX {
       resolution: { value: new THREE.Vector2(1, 1) }, time: { value: 0 },
       hurt: { value: 0 }, flash: { value: 0 }, grayscale: { value: 0 }, lightning: { value: 0 },
       bloomStrength: { value: 1 }, exposure: { value: 1 }, saturation: { value: 0.85 },
-      vignette: { value: 0.45 }, grain: { value: 0.035 }, aberration: { value: 0.0025 },
+      vignette: { value: 0.45 }, grain: { value: 0.035 }, aberration: { value: 0.0025 }, bodycam: { value: 0 },
       bloomWeights: { value: new THREE.Vector2(0.6, 1.0) },
       ads: { value: 0 }, tDof: { value: null }, vDesat: { value: 0.15 }, vContrast: { value: 1.1 }, vBright: { value: 0 }, vFloor: { value: 0 }, vToe: { value: 9 }, vFloorTint: { value: new THREE.Vector3(1, 1, 1) }, vLight: { value: new THREE.Vector3(1, 1, 1) }, vDark: { value: new THREE.Vector3(1, 1, 1) },
     }, { USE_BLOOM: 1, USE_FXAA: 0, USE_SSAO: 0, USE_SHARPEN: 0 });
@@ -7324,6 +7324,7 @@ uniform float time;
 uniform float hurt, flash, grayscale, lightning;
 uniform float bloomStrength, exposure, saturation;
 uniform float vignette, grain, aberration;
+uniform float bodycam;
 uniform vec2 bloomWeights;
 uniform float vDesat, vContrast, vBright, ads; uniform float vFloor; uniform vec3 vFloorTint; uniform float vToe;
 uniform sampler2D tDof;
@@ -7389,13 +7390,18 @@ vec3 sceneSample(vec2 uv) { return texture2D(tScene, uv).rgb; }
 
 void main() {
   vec2 uv = vUv;
-  vec2 d = uv - 0.5;
+  float bc = bodycam * (1.0 - 0.7 * ads);
+  if (bc > 0.001) {   // v6.71 bodycam lens: barrel distortion, scaled so the frame corners stay on the image (the centre is magnified)
+    float asp = resolution.x / resolution.y; vec2 c = (uv - 0.5) * vec2(asp, 1.0); float kb = 0.24 * bc, rc = 0.25 * (asp * asp + 1.0);
+    c *= (1.0 + kb * dot(c, c)) / (1.0 + kb * rc); uv = c / vec2(asp, 1.0) + 0.5;
+  }
+  vec2 d = vUv - 0.5;
   float r2 = dot(d, d) * 2.0;                      // 0 centre, 1 corner
 
   // --- scene with radial chromatic aberration (strength ~aberration at the edges) ---
-  vec2 off = d * aberration * 2.0 * r2;
+  vec2 off = d * aberration * (2.0 + 5.0 * bc) * r2;
   vec3 col = sceneSample(uv);
-  float caW = smoothstep(0.0, 0.6, r2);
+  float caW = smoothstep(0.0, 0.6 - 0.3 * bc, r2);
   col.r = mix(col.r, texture2D(tScene, uv + off).r, caW);
   col.b = mix(col.b, texture2D(tScene, uv - off).b, caW);
   col = max(col, vec3(0.0));
@@ -7410,7 +7416,7 @@ void main() {
   // --- bloom ---
 #if USE_BLOOM
   vec3 bloom = texture2D(tBloomHalf, uv).rgb * bloomWeights.x + texture2D(tBloomQuarter, uv).rgb * bloomWeights.y;
-  col += bloom * bloomStrength;
+  col += bloom * bloomStrength * (1.0 + 0.6 * bc);
 #endif
 
   // --- HDR adjustments ---
@@ -7433,11 +7439,15 @@ void main() {
   col = max(pc, vec3(0.0)); col *= col;
   col *= mix(vDark, vLight, smoothstep(0.0, 0.6, sqrt(luma(col))));
   col = col * (1.0 - 0.012) + 0.012;                 // black lift
+  if (bc > 0.001) {   // v6.71 bodycam sensor: a little flatter and cooler, highlights roll toward clipping
+    float lb = luma(col); col = mix(col, vec3(lb), 0.16 * bc); col *= mix(vec3(1.0), vec3(0.965, 1.015, 1.0), bc);
+    col = mix(col, 1.0 - (1.0 - col) * (1.0 - col), 0.14 * bc * smoothstep(0.4, 0.85, lb));
+  }
 
   // --- vignette ---
   float dist = length(d);
   float vig = smoothstep(1.0, 0.35, dist * 1.35);
-  col *= mix(1.0 - vignette, 1.0, vig);
+  col *= mix(1.0 - vignette - 0.18 * bc, 1.0, vig);
   { float fl = luma(col); col += vFloorTint * (sqrt(fl * fl + vFloor * vFloor) - fl); }   // v6.53 brightness floor: nothing on screen sinks to black
 
   // --- hurt: red edge vignette + desaturation + pulse ---
@@ -7463,7 +7473,8 @@ void main() {
   vec2 gp = floor(gl_FragCoord.xy) + vec2(fract(t * 7.13) * 517.0, fract(t * 3.71) * 293.0);
   float n = hash12(gp) - 0.5;
   float lg = luma(col);
-  col += n * grain * mix(1.0, 0.3, lg);
+  col += n * grain * (1.0 + 1.3 * bc) * mix(1.0, 0.3, lg);
+  if (bc > 0.001) { vec3 cn = vec3(hash12(gp + 17.0), hash12(gp + 41.0), hash12(gp + 73.0)) - 0.5; col += cn * grain * 0.8 * bc * (1.0 - lg); }   // chroma noise in the dark
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
@@ -8811,6 +8822,7 @@ const ZombieModel = (() => {
   function animate(model, a, dt) {
     if (!model.skinned) return PR.animate(model, a, dt);
     model._crawl = a.speedKind === 'crawl' || model.variant === 'crawler'; apply(model, PR.solve(model, a, dt));
+    if (model._ph && model._ph.on) { if (a.state === 'dead' || a.state === 'getup' || a.state === 'rise') model._ph.on = false; else physStep(model, dt); }   // v6.71
   }
   // LOD: about a third of the triangles past ~16 m (9 m on Low)
   function lod(model, dist, tier) {   // tier 'low' | 'medium' | 'high' (true = low, for older callers)
@@ -8876,6 +8888,7 @@ const ZombieModel = (() => {
     if (!model.skinned) return;
     for (const n in model.meshes.att) if (n !== 'Shield') attach(model, n, n === model.hat);
     if (model._rag) model._rag.on = false;   // v6.32
+    if (model._ph) model._ph.on = false;   // v6.71
     model.elite = null; model._fk = 0; model._bk = 0; model._ft = null; model.statusK = 'x'; status(model, 0, 0, 0, 0); model.statusK = '';
     for (const key in model._shared) { const m = model._shared[key]; if (m.userData.c0 !== undefined) m.color.copy(m.userData.c0); if (m.emissive) m.emissive.setRGB(0, 0, 0); }
     model.bones[A.idx('head')].scale.setScalar(1); model.head.visible = true;
@@ -8976,6 +8989,7 @@ const ZombieModel = (() => {
   //         (null: limp at once), it: solver iterations }   env: { floor(x, z), solid(x, z), g, sink: m/s (bury after the corpse time) }
   const RG = ['root', 'spine_upper', 'neck', 'head', 'head', 'head', 'upperarmL', 'forearmL', 'handL', 'handL', 'upperarmR', 'forearmR', 'handR', 'handR',
     'thighL', 'shinL', 'footL', 'footL', 'thighR', 'shinR', 'footR', 'footR'];
+  const RG_COL = [0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 16, 18, 19, 20];   // v6.71 the points other bodies rest on
   const RG_R = [0.12, 0.13, 0.07, 0.1, 0.06, 0.06, 0.06, 0.05, 0.045, 0.03, 0.06, 0.05, 0.045, 0.03, 0.08, 0.06, 0.05, 0.035, 0.08, 0.06, 0.05, 0.035];
   // rigid sticks, then [a, b, min, max] limits as fractions of the rest distance
   const RG_S = [[3, 4], [3, 5], [4, 5], [2, 3], [2, 4], [2, 5], [1, 2], [1, 6], [1, 10], [2, 6], [2, 10], [6, 10], [0, 14], [0, 18], [14, 18], [0, 1],
@@ -9022,7 +9036,7 @@ const ZombieModel = (() => {
   };
   function ragStart(m, o) {
     if (!m.skinned || !prepare()) return false;
-    ragPrep(); o = o || {};
+    ragPrep(); o = o || {}; if (m._ph) m._ph.on = false;
     m.group.updateMatrixWorld(true);
     const n = RG.length, R = m._rag || (m._rag = { p: [], q: [], t: [], wa: [], fa: [], lq: [] });
     for (let i = 0; i < n; i++) { R.p[i] = R.p[i] || new THREE.Vector3(); R.q[i] = R.q[i] || new THREE.Vector3(); R.t[i] = R.t[i] || new THREE.Vector3(); }
@@ -9058,6 +9072,12 @@ const ZombieModel = (() => {
         const P = p[i], Q = q[i], r = RG_R[i];
         if (env.solid(P.x, P.z) && !env.solid(Q.x, Q.z)) { P.x = Q.x; P.z = Q.z; }
         if (!sink) { const f = env.floor(P.x, P.z) + r; if (P.y < f) P.y = f; }
+      }
+      if (env.bodies && !sink) for (const O of env.bodies) {   // v6.71 bodies pile on bodies
+        const op = O.p;
+        for (const jj of RG_COL) { const Bp = op[jj], rj = RG_R[jj] + 0.015;
+          for (let i = 0; i < n; i++) { const P = p[i], dx = P.x - Bp.x, dy = P.y - Bp.y, dz = P.z - Bp.z, rr = RG_R[i] + rj, d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 >= rr * rr || d2 < 1e-8) continue; const d = Math.sqrt(d2), k = (rr - d) / d; P.x += dx * k; P.y += dy * k * 1.3; P.z += dz * k; } }
       }
     }
     if (!sink) for (let i = 0; i < n; i++) {   // ground friction and no bounce, once a step
@@ -9139,10 +9159,86 @@ const ZombieModel = (() => {
     const back = _ru.y > 0, hx = (p[1].x + p[3].x) / 2 - p[0].x, hz = (p[1].z + p[3].z) / 2 - p[0].z;
     return { back, yaw: back ? Math.atan2(-hx, -hz) : Math.atan2(hx, hz), x: p[0].x, z: p[0].z };
   }
+  // v6.71 Bodycam-style physical hit reactions on a live zombie. A round sets the bones between the hit and the pelvis swinging on
+  // damped springs (torque = lever x push; lighter bones swing further, the chain above takes less), the pelvis takes a shove that the
+  // planted-feet IK turns into a stagger, and a leg hit drops the hips onto that knee. Visual only: speed, path and hit boxes are untouched.
+  // physHit(m, px, py, pz, dx, dy, dz, k, leg)  world hit point, unit push direction, strength ~0.3..1.6
+  // physStep(m, dt) runs inside animate after the pose; asleep once the springs settle
+  const PH_N = ['root', 'spine_lower', 'spine_upper', 'neck', 'head', 'clavicleL', 'upperarmL', 'forearmL', 'clavicleR', 'upperarmR', 'forearmR', 'thighL', 'shinL', 'thighR', 'shinR'];
+  const PH_I = [4.0, 2.6, 1.9, 0.5, 0.42, 0.7, 0.42, 0.22, 0.7, 0.42, 0.22, 1.5, 0.75, 1.5, 0.75];   // swing inertia (heavier = less swing)
+  const PH_K = 140, PH_D = 13, PH_MAX = 0.6, PH_GAIN = 16, PO_K = 70, PO_D = 11, PO_MAX = 0.22;
+  let PHI = null;
+  const _hv = new THREE.Vector3(), _hw = new THREE.Vector3(), _hu = new THREE.Vector3(), _hq = new THREE.Quaternion(), _hq2 = new THREE.Quaternion(), _hs = new THREE.Vector3(), _hp = new THREE.Vector3();
+  function phPrep() {
+    if (PHI) return PHI;
+    const idx = PH_N.map(n => A.idx(n)), par = [];
+    for (let j = 0; j < idx.length; j++) {   // nearest ancestor that is also on the list
+      let b = A.bones[idx[j]].parent, pj = -1;
+      while (b && pj < 0) { const bi = A.bones.indexOf(b); pj = bi < 0 ? -1 : idx.indexOf(bi); if (pj < 0) b = b.parent; if (bi < 0) break; }
+      par.push(pj);
+    }
+    PHI = { idx, par }; return PHI;
+  }
+  function physHit(m, px, py, pz, dx, dy, dz, k, leg) {
+    if (!m.skinned || !prepare() || !k) return;
+    const I = phPrep(), n = I.idx.length;
+    const S = m._ph || (m._ph = { w: [], v: [], o: new THREE.Vector3(), ov: new THREE.Vector3(), on: false, calm: 0 });
+    for (let j = 0; j < n; j++) { S.w[j] = S.w[j] || new THREE.Vector3(); S.v[j] = S.v[j] || new THREE.Vector3(); }
+    m.group.updateMatrixWorld(true);
+    _hp.set(px, py, pz);
+    let best = 0, bd = 1e9;
+    for (let j = 0; j < n; j++) { wpos(m.bones[I.idx[j]], _hv); const d = _hv.distanceToSquared(_hp); if (d < bd) { bd = d; best = j; } }
+    // a hit on a forearm or shin acts about the elbow / knee; the bones up the chain to the pelvis take a fading share
+    let j = best, f = 1;
+    while (j >= 0) {
+      wpos(m.bones[I.idx[j]], _hv);
+      _hw.subVectors(_hp, _hv); _hu.set(dx, dy, dz).multiplyScalar(k * f);
+      _hw.cross(_hu);   // torque
+      S.v[j].addScaledVector(_hw, PH_GAIN / PH_I[j]);
+      j = I.par[j]; f *= 0.6;
+    }
+    S.ov.x += dx * k * 0.75; S.ov.z += dz * k * 0.75;   // the pelvis shove (m/s)
+    if (leg) { S.ov.y -= 0.55 * k; S.ov.x += dx * k * 0.2; S.ov.z += dz * k * 0.2; }   // a leg hit: the hips drop onto that knee
+    S.on = true; S.calm = 0;
+  }
+  function physStep(m, dt) {
+    const S = m._ph; if (!S || !S.on) return;
+    const I = PHI, n = I.idx.length; dt = Math.min(dt, 1 / 20);
+    let e = 0;
+    const ns = dt > 1 / 50 ? 2 : 1, h = dt / ns;
+    for (let it = 0; it < ns; it++) {
+      for (let j = 0; j < n; j++) {   // semi-implicit damped springs
+        const w = S.w[j], v = S.v[j];
+        v.x += (-PH_K * w.x - PH_D * v.x) * h; v.y += (-PH_K * w.y - PH_D * v.y) * h; v.z += (-PH_K * w.z - PH_D * v.z) * h;
+        w.addScaledVector(v, h); const l = w.length(); if (l > PH_MAX) { w.multiplyScalar(PH_MAX / l); v.multiplyScalar(0.5); }
+      }
+      const o = S.o, ov = S.ov;
+      ov.x += (-PO_K * o.x - PO_D * ov.x) * h; ov.y += (-PO_K * o.y - PO_D * ov.y) * h; ov.z += (-PO_K * o.z - PO_D * ov.z) * h;
+      o.addScaledVector(ov, h); const ol = o.length(); if (ol > PO_MAX) { o.multiplyScalar(PO_MAX / ol); ov.multiplyScalar(0.5); }
+    }
+    for (let j = 0; j < n; j++) e += S.w[j].lengthSq() + S.v[j].lengthSq() * 0.01;
+    e += (S.o.lengthSq() + S.ov.lengthSq() * 0.01) * 4;
+    if (e < 2e-6) { S.calm += dt; if (S.calm > 0.15) { S.on = false; for (let j = 0; j < n; j++) { S.w[j].set(0, 0, 0); S.v[j].set(0, 0, 0); } S.o.set(0, 0, 0); S.ov.set(0, 0, 0); return; } }
+    else S.calm = 0;
+    m.group.updateMatrixWorld(true);
+    // the pelvis offset (world) into the root bone's parent frame
+    const rb = m.bones[I.idx[0]];
+    rb.parent.matrixWorld.decompose(_hv, _hq, _hs);
+    _hw.copy(S.o).applyQuaternion(_hq.invert()); _hw.x /= _hs.x; _hw.y /= _hs.y; _hw.z /= _hs.z;
+    rb.position.add(_hw);
+    rb.updateMatrixWorld(true);
+    for (let j = 0; j < n; j++) {   // root first, then down the chain: each turn is a world-space rotation on top of the animated pose
+      const w = S.w[j], l = w.length(); if (l < 1e-5) continue;
+      const b = m.bones[I.idx[j]];
+      _hu.copy(w).divideScalar(l); _hq.setFromAxisAngle(_hu, l);
+      wquat(b, _hq2); _hq.multiply(_hq2); setWorldQ(b, _hq); b.updateMatrixWorld(true);
+    }
+  }
+  const physOn = m => !!(m && m._ph && m._ph.on);
   const m_bone = (m, n) => m.bones[A.idx(n)], clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   return {
     plant, build, buildBoss, animate, dispose, disposeShared: () => PR.disposeShared(), channels: C, lod, status, elite, reset, warmSet, attach,
-    get skinned() { return !!prepare(); }, prepare, dropArm, legProp, gibAhead, ragStart, ragStep, ragStop, ragPelvis, ragKick, ragGetup, ragHit, ragRay,
+    get skinned() { return !!prepare(); }, prepare, dropArm, legProp, gibAhead, ragStart, ragStep, ragStop, ragPelvis, ragKick, ragGetup, ragHit, ragRay, physHit, physStep, physOn,
   };
 })();
 </script>
@@ -23219,7 +23315,7 @@ const Secrets = (() => {
 const NBX = window.NBX = (() => {
   'use strict';
   const DEF = { qpBright: 50, qpMusic: 80, qpSfx: 100, qpVoice: 100, qpAimKb: 'hold', qpAimPad: 'hold', qpAimTouch: 'toggle', qpSprintKb: 'hold', qpSprintPad: 'toggle', qpSprintTouch: 'toggle',
-    qpShake: 100, qpBob: 100, qpFps: 0, qpCap: 0, qpScale: 100, qpCb: 'off', qpHoldBuy: 1, qpMantle: 1, qpLone: 1, qpDmgNum: 0, qpHpBars: 0, qpGuide: 1, qpMapOpen: 1, qpRangeRound: 10 };
+    qpShake: 100, qpBob: 100, qpCam: 'std', qpFps: 0, qpCap: 0, qpScale: 100, qpCb: 'off', qpHoldBuy: 1, qpMantle: 1, qpLone: 1, qpDmgNum: 0, qpHpBars: 0, qpGuide: 1, qpMapOpen: 1, qpRangeRound: 10 };
   for (const k in DEF) if (meta[k] == null) meta[k] = DEF[k];
   if (!meta.qpGuideSeen || typeof meta.qpGuideSeen !== 'object') meta.qpGuideSeen = {};
   // key binding rows (spliced into NBQ.BINDS before its tables are built)
@@ -23277,7 +23373,7 @@ const NBX = window.NBX = (() => {
   const voiceAll = () => clamp(meta.vol == null ? 85 : +meta.vol, 0, 100) / 100 * voiceK();
 
   // ---------- Q4 shake and bob ----------
-  function applyMotion() { api.shakeK = clamp(+meta.qpShake, 0, 100) / 100; api.bobK = clamp(+meta.qpBob, 0, 100) / 100; }
+  function applyMotion() { api.shakeK = clamp(+meta.qpShake, 0, 100) / 100; api.bobK = clamp(+meta.qpBob, 0, 100) / 100; api.bodycam = meta.qpCam === 'body' ? 1 : 0; }   // v6.71 camera look
 
   // ---------- Q5 frame cap, FPS counter, render scale ----------
   let capLast = 0, fN = 0, fT0 = 0, fpsEl = null, fPrev = 0, fWorst = 0;
@@ -23341,6 +23437,8 @@ const NBX = window.NBX = (() => {
         seg('qpCap', 'FRAME CAP', [[0, 'Off'], [30, '30'], [60, '60'], [90, '90'], [120, '120'], [144, '144']], +meta.qpCap || 0) +
         seg('qpFps', 'FPS COUNTER', OFFON, meta.qpFps ? 1 : 0) +
         slider('qpShake', 'CAMERA SHAKE', 0, 100, 5, meta.qpShake, F.pct) + slider('qpBob', 'HEAD BOB', 0, 100, 5, meta.qpBob, F.pct) +
+        seg('qpCam', 'CAMERA LOOK', [['std', 'Standard'], ['body', 'Bodycam']], meta.qpCam || 'std') +
+        '<p class="note">Bodycam: a chest-camera look with a wide fisheye lens, lens fringing, sensor noise and a camera that sways with your stride.</p>' +
         seg('qpCb', 'COLOUR VISION', [['off', 'Standard'], ['protan', 'Protan'], ['deutan', 'Deutan'], ['tritan', 'Tritan']], meta.qpCb) +
         '<h3 class="cxh">Aim, sprint and buying</h3>' +
         seg('qpAimKb', 'AIM (MOUSE)', HO, meta.qpAimKb) + seg('qpSprintKb', 'SPRINT (KEYBOARD)', HO, meta.qpSprintKb) +
@@ -23358,7 +23456,7 @@ const NBX = window.NBX = (() => {
       hook('qpBright', 'qpBright', F.bright, () => { applyBright(); drawCalib($('qpCal')); });
       hook('qpScale', 'qpScale', F.pct, applyScale); hook('qpShake', 'qpShake', F.pct, applyMotion); hook('qpBob', 'qpBob', F.pct, applyMotion);
       const segH = (id, key, num, after) => { const el = $(id); if (!el) return; el.querySelectorAll('button').forEach(x => x.addEventListener('click', () => { meta[key] = num ? +x.dataset.v : x.dataset.v; saveMeta(); el.querySelectorAll('button').forEach(y => y.classList.toggle('on', y === x)); after && after(); })); };
-      segH('qpCap', 'qpCap', true); segH('qpFps', 'qpFps', true, applyFps); segH('qpCb', 'qpCb', false, applyCb);
+      segH('qpCap', 'qpCap', true); segH('qpFps', 'qpFps', true, applyFps); segH('qpCam', 'qpCam', false, applyMotion); segH('qpCb', 'qpCb', false, applyCb);
       for (const k of ['qpAimKb', 'qpSprintKb', 'qpAimPad', 'qpSprintPad', 'qpAimTouch', 'qpSprintTouch']) segH(k, k, false, () => { kbLatch = false; });
       for (const k of ['qpHoldBuy', 'qpMantle', 'qpLone', 'qpDmgNum', 'qpHpBars', 'qpGuide']) segH(k, k, true);
       const rb = $('qpGuideReset'); if (rb) rb.addEventListener('click', () => { meta.qpGuideSeen = {}; saveMeta(); $('qpGuideN').textContent = '0 seen'; rb.textContent = 'Hints reset'; });
@@ -29990,7 +30088,7 @@ function tideTiers() {
   tideCand.length = 0;
   for (const z of zombies) {
     z.pd2 = (P.x - z.x) * (P.x - z.x) + (P.z - z.z) * (P.z - z.z);
-    if (z.dead) { if (z.model) n++; continue; }
+    if (z.dead) { if (z.model && !fx.ultra) n++; continue; }   // v6.71 Ultra: corpses do not take the near horde's models
     if (z.kdRag && z.model) { n++; continue; }   // v6.35.3 a knocked-down ragdoll keeps its model until it is back up
     if (z.boss || z.elite || z.hound || z.armless || z.headless) { if (!z.model) attachModel(z); n++; continue; }
     tideCand.push(z);
@@ -30295,6 +30393,17 @@ function zHit(z, part, point, dir, amount, cause) {
   if (k >= (z.hitK || 0) * 0.6) { z.hitF = f; z.hitS = s; z.hitP = p; }
   z.hitK = Math.min(1, Math.max(k, (z.hitK || 0) * 0.7 + k * 0.6));
   z.lastAmt = amount; z.lastPart = part;
+  // v6.71 Bodycam: the body reacts to every round physically (the struck part swings, the pelvis staggers); visual only, the pace is WaW's
+  if (z.model && z.model.skinned && ZombieModel.physHit && point && !(z.downT > 0) && !z.kdRag && fx.quality !== 'low' && z.state !== 'climb') {
+    const pk = clamp(0.35 + fr * 1.3 + cal * 1.3, 0.3, 1.6) * (cause === 'gun' ? 1 : cause === 'knife' ? 0.9 : 0.6) * (z.elite === 'armored' ? 0.6 : 1) * (z.kind === 'crawl' ? 0.5 : 1);
+    ZombieModel.physHit(z.model, point.x, point.y, point.z, dx, clamp(dir.y || 0, -0.5, 0.5), dz, pk, p === 2 || p === 3);
+  }
+  // v6.71 Bodycam: a runner or sprinter shot hard in the legs can trip and go down (ragdoll fall, BO1 getup). Not in Purist.
+  if (cause === 'gun' && (p === 2 || p === 3) && (z.kind === 'run' || z.kind === 'sprint') && z.state === 'chase' && fr >= 0.22 && !(z.downT > 0) && !z.kdRag
+      && !z.boss && !z.hound && !z.elite && run.mode !== 'purist' && !(z.tripT > G.time) && Math.random() < 0.3) {
+    z.tripT = G.time + 5; z.kdYaw = z.yaw; z.downT = Math.max(z.downT || 0, 1.7); z.atkT = 0; z.pendingHit = false; z.hitK = 0;
+    z.kvx = Math.sin(z.yaw) * 2.6; z.kvz = Math.cos(z.yaw) * 2.6; run.stats.trips = (run.stats.trips || 0) + 1;
+  }
   // v6.32 WaW/BO1 actors take no shove from a bullet that does not drop them: a light hit is a twitch only; a hit taking 30 %+ still knocks it back
   const imp = (cause === 'gun' ? (fr >= 0.3 ? 0.25 + 2.2 * Math.min(fr, 1) : 0) : 0.5) * (z.elite === 'armored' ? 0.5 : 1) * (z.kind === 'crawl' ? 0.5 : 1);
   zPush(z, dx * imp, dz * imp, 3.5); z.lastDx = dx; z.lastDz = dz; z.lastFr = fr;
@@ -30315,7 +30424,7 @@ function zBlast(z, pos, radius, d, small, cause) {
 function killZombie(z, part, cause, point, dir) {
   if (z.dead) return;
   z.dead = true; z.state = 'dead'; z.deadT = 0;
-  z._dpart = part; zDeathFling(z, cause, dir);
+  z._dpart = part; z._dpt = point ? { x: point.x, y: point.y, z: point.z } : null; zDeathFling(z, cause, dir);   // v6.71 where the killing round landed
   zParts = zParts.filter(p => p.userData.z !== z);
   if (z.hound) Hounds.onKill(z);   // v6.14
   if (z.gas) GasCrawl.onKill(z, cause);   // v6.41
@@ -30393,8 +30502,14 @@ function zCorpse(z, dt) {   // the thrown or sliding body: gravity, walls, a lit
 // back up with BO1's getups (belly: push up, knee under; back: sit up, tuck, rise). Tiered: High 14 bodies in motion at a time,
 // Medium 8, Low none (Low keeps the 6.31 falls). Bodies at rest cost nothing.
 const RAG_CAP = { high: 14, medium: 8, low: 0 }, RAG_IT = { high: 6, medium: 4, low: 4 }, RAG_MUS = [[0.3, 0.7], [0.22, 0.55], [0.3, 0.7], [0.12, 0.42], [0.75, 1.3]];
-const ragEnv = { floor: (x, z) => floorAt(x, z), solid: (x, z) => isFull0(zSolid, toCell(x), toCell(z)), g: 9.8, sink: 0, mk: undefined };
-const ragCap = () => RAG_CAP[fx.quality] === undefined ? 8 : RAG_CAP[fx.quality];
+const ragEnv = { floor: (x, z) => floorAt(x, z), solid: (x, z) => isFull0(zSolid, toCell(x), toCell(z)), g: 9.8, sink: 0, mk: undefined, bodies: null };
+const ragCap = () => fx.ultra ? 22 : RAG_CAP[fx.quality] === undefined ? 8 : RAG_CAP[fx.quality];   // v6.71 Ultra: 22 bodies in motion
+const _rgN = [];
+function ragNear(z) {   // v6.71 the bodies near this one (for piling)
+  const R0 = z.model && z.model._rag; if (!R0 || !R0.on || R0.sleep) return null; const p0 = R0.p[0]; _rgN.length = 0;
+  for (const o of zombies) { if (o === z || !o.model || !(o.rag || o.kdRag)) continue; const R = o.model._rag; if (!R || !R.on) continue; const q = R.p[0]; if (Math.abs(q.x - p0.x) < 1.9 && Math.abs(q.z - p0.z) < 1.9 && Math.abs(q.y - p0.y) < 1.5) _rgN.push(R); }
+  return _rgN.length ? _rgN : null;
+}
 function ragBusy() { let n = 0; for (const z of zombies) { const R = z.model && z.model._rag; if (R && R.on && !R.sleep && (z.rag || z.kdRag)) n++; } return n; }
 function ragG(z) { return map && map.lowGrav && !zoneIndoor(zoneAt(toCell(z.x), toCell(z.z))) ? 4.1 : 9.8; }   // the moon: bodies float down
 function zRagStart(z, cause, dir) {
@@ -30425,13 +30540,16 @@ function zRagStart(z, cause, dir) {
     const hits = [];
     if (head && dir) { const dl = Math.hypot(dir.x, dir.z) || 1; hits.push({ x: z.x, y: (z.y || 0) + 1.6, z: z.z, vx: dir.x / dl * 2.2, vy: 0.4, vz: dir.z / dl * 2.2, r: 0.35 }); }
     o = { v: [z.dvx, 0, z.dvz], hits, mus: RAG_MUS[dv] };
+    // v6.71 Bodycam: the killing round pushes where it landed (heavier calibres more); most head kills drop limp on the spot, strings cut
+    const pt = z._dpt; if (pt && dir && !head && !crawl) { const dl = Math.hypot(dir.x, dir.z) || 1, pv = 1.0 + 2.8 * clamp((z.lastAmt || 100) / 450, 0, 1); hits.push({ x: pt.x, y: pt.y, z: pt.z, vx: dir.x / dl * pv, vy: 0.15, vz: dir.z / dl * pv, r: 0.42 }); }
+    if (head && !crawl && gv <= 1.9 && Math.random() < 0.65) { o.mus = null; z.dv = 0; o.v = [z.dvx * 0.4, -0.3, z.dvz * 0.4]; }
   }
   o.it = RAG_IT[fx.quality] || 4;
   if (z.g) { z.g.position.set(z.x, z.y, z.z); z.g.rotation.y = z.yaw + Math.PI; }
   if (ZombieModel.ragStart(m, o)) { z.rag = true; z.sinkT = zSinkT(); }
 }
 // WaW corpses lie a while; ours lie 5 s on High and 3.6 s on Medium before sinking, the oldest going early past 10 / 6 bodies
-function zSinkT() { const hi = fx.quality === 'high', cap = hi ? 10 : 6; let n = 0; for (const o of zombies) if (o.dead && o.rag && o.deadT < (o.sinkT || 2.4)) n++; return n > cap ? 2.4 : hi ? 5 : 3.6; }
+function zSinkT() { const ul = !!fx.ultra, hi = fx.quality === 'high', cap = ul ? 18 : hi ? 12 : 6; let n = 0; for (const o of zombies) if (o.dead && o.rag && o.deadT < (o.sinkT || 2.4)) n++; return n > cap ? 2.4 : ul ? 12 : hi ? 7 : 3.6; }   // v6.71 Bodycam: bodies lie longer (Ultra 12 s, High 7 s)
 // a bullet that reaches a body lying on the floor (or still falling) shoves it, with a little blood: WaW launches the ragdoll the
 // bullet's way (death.gsc: bullets 0.35 of an explosion's 1.6, shotgun pellets up close more), plus a little lift
 function zRagShot(o, d, maxT, dmg, pellet) {
@@ -30447,7 +30565,7 @@ function zRagDead(z, a, dt) {
   if (mus) { if (z.deadT < 2.4) zCorpse(z, dt); }   // the death animation's frame keeps the speed it died with while the muscles hold
   else { const p = ZombieModel.ragPelvis(m); if (p) { z.x = p.x; z.z = p.z; z.y = p.y - 0.5; } }   // then the group follows the body (culling, effects)
   z.g.position.set(z.x, z.y, z.z); z.g.rotation.y = z.yaw + Math.PI;
-  ragEnv.sink = z.deadT > (z.sinkT || 2.4) ? 0.9 : 0; ragEnv.mk = undefined; ragEnv.g = ragG(z);
+  ragEnv.sink = z.deadT > (z.sinkT || 2.4) ? 0.9 : 0; ragEnv.mk = undefined; ragEnv.g = ragG(z); ragEnv.bodies = ragEnv.sink ? null : ragNear(z);
   ZombieModel.ragStep(m, a, dt, ragEnv);
 }
 const KD_GU = 0.95;   // the getup's share of a knockdown (s)
@@ -30463,7 +30581,7 @@ function zKdRag(z, a, dt) {
   }
   z.downT -= dt; z.atkT = 0; z.pendingHit = false; z.flinch = 0; a.moving = false; a.attackT = 0; a.flinch = 0; a.hitK = 0;
   if (z.kvx || z.kvz) { ZombieModel.ragKick(m, z.kvx, 0.5, z.kvz); z.kvx = z.kvz = 0; }   // another blast while down
-  ragEnv.sink = 0; ragEnv.g = ragG(z);
+  ragEnv.sink = 0; ragEnv.g = ragG(z); ragEnv.bodies = ragNear(z);
   if (z.downT > KD_GU) {   // thrown, then lying there
     const p = ZombieModel.ragPelvis(m); if (p) { z.x = p.x; z.z = p.z; z.y = z.fy = floorAt(p.x, p.z); }
     z.g.position.set(z.x, z.y, z.z); a.state = 'dead'; a.deadT = 1; a.kd = true; a.dv = 0; ragEnv.mk = undefined;
@@ -33557,15 +33675,20 @@ function updatePlayer(dt) {
   G.focus = P.downT > 0 ? null : findInteract();
   if (G.focus && G.focus.hold && keys.KeyF) G.focus.hold(dt); else { if (vm.current === 'board') vm.cancel(); if (G.focus && G.focus.w) G.focus.w.repairT = 0; }
   // camera
-  const bobY = P.moving && !P.air ? Math.sin(P.bob * 2) * (P.sprinting ? 0.06 : 0.035) * (P.stance === 2 ? 0.5 : 1) * NBX.bobK : 0;
+  const bcam = NBX.bodycam || 0;   // v6.71 Bodycam: a chest camera bounces more, rolls with the stride and leans into turns
+  const bobY = P.moving && !P.air ? Math.sin(P.bob * 2) * (P.sprinting ? 0.06 : 0.035) * (P.stance === 2 ? 0.5 : 1) * NBX.bobK * (1 + 0.45 * bcam) : 0;
+  if (bcam) { const yv = dt > 0 ? clamp(Math.atan2(Math.sin(P.yaw - (P.bcYp == null ? P.yaw : P.bcYp)), Math.cos(P.yaw - (P.bcYp == null ? P.yaw : P.bcYp))) / dt, -10, 10) : 0; P.bcYv = (P.bcYv || 0) + (yv - (P.bcYv || 0)) * Math.min(1, dt * 7); }
+  P.bcYp = P.yaw;
+  const bcRoll = bcam ? ((P.moving && !P.air ? Math.sin(P.bob) * (P.sprinting ? 0.02 : 0.01) * NBX.bobK : 0) + clamp(-(P.bcYv || 0) * 0.005, -0.03, 0.03)) * (P.ads ? 0.3 : 1) : 0;
   P.eyeH = lerp(P.eyeH || 1.6, P.diveT ? 1.0 : EYE[P.stance || 0], Math.min(1, dt * (P.stance === 2 || P.stanceT > 0 ? 7 : 12)));
   P.shake = Math.max(0, (P.shake || 0) - dt * 2.5);
   const shx = P.shake > 0 ? (rng() - .5) * P.shake * 0.06 * NBX.shakeK : 0, shy = P.shake > 0 ? (rng() - .5) * P.shake * 0.06 * NBX.shakeK : 0;
   camera.position.set(P.x, (P.fy || 0) + (P.downT > 0 ? 0.7 : P.eyeH) + bobY, P.z);
   P.vkT = (P.vkT || 0) * Math.exp(-dt * 5); P.vkP = (P.vkP || 0) + (P.vkT - (P.vkP || 0)) * Math.min(1, dt * 35);   // v6.32 punch up, then re-centre
-  camera.rotation.set(P.pitch + P.vkP + shy, P.yaw + shx, P.downT > 0 ? 0.25 : 0);
+  camera.rotation.set(P.pitch + P.vkP + shy, P.yaw + shx, (P.downT > 0 ? 0.25 : 0) + bcRoll);
   const W = WEAPONS[curGun().key];
-  const fov = P.ads && W.scope ? W.scope : cgFov(P.ads ? (!window.NB_ADS_OLD && ViewModel.WAW_ADS[curGun().key] ? ViewModel.WAW_ADS[curGun().key] * (meta.fov || 65) / 65 : W.snd === 'rifle' && !W.auto ? 42 : 50) : P.sprinting ? (meta.fov || 65) + 5 : (meta.fov || 65));   // v6.13 FOV setting; v6.43 in WaW's cg_fov (scopes stay vertical degrees)
+  let fov = P.ads && W.scope ? W.scope : cgFov(P.ads ? (!window.NB_ADS_OLD && ViewModel.WAW_ADS[curGun().key] ? ViewModel.WAW_ADS[curGun().key] * (meta.fov || 65) / 65 : W.snd === 'rifle' && !W.auto ? 42 : 50) : P.sprinting ? (meta.fov || 65) + 5 : (meta.fov || 65));   // v6.13 FOV setting; v6.43 in WaW's cg_fov (scopes stay vertical degrees)
+  if (bcam && !(P.ads && W.scope)) fov = Math.min(100, fov * (P.ads ? 1.06 : 1.24));   // v6.71 the bodycam lens is wide (the barrel distortion pulls the centre back in)
   { const sc = !!W.scope && P.ads && vm.fAds.x > 0.85 && P.reloadT <= 0 && P.switchT <= 0; if (sc !== !!P.scoped) { P.scoped = sc; $('scopeOv').hidden = !sc; $('scopeOv').classList.toggle('ir', !!W.ir); $('scopeOv').classList.toggle('opt', !!W.optic); vm.rig.visible = !sc; } }
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = lerp(camera.fov, fov, Math.min(1, dt * 2.3 / (vm.adsT || 0.25) * S.adsSpeed * Loadout.ak('ads'))); camera.updateProjectionMatrix(); }
   // viewmodel

@@ -1,7 +1,7 @@
 {
- "version": "6.73.2",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/8b18e3a0ccd5e9022dfb70ee6eccd12d07d79710/game/",
- "notes": "Night Bunker 6.73.2: material fix",
+ "version": "6.74.0",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/3d2fb54a66897ce99d1625be38ab31940c208f2f/game/",
+ "notes": "Night Bunker 6.74.0",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -2000,8 +2000,8 @@
    "a0eb43f7ea3ebff432b8e327c6489d73ab5930d933842aab5fb440e6942d2b2f"
   ],
   "app/game/index.html": [
-   3327902,
-   "c91c23d7836df5cd0e7121275d606aa0ab5daa2d3c0d58045be64f40b689d435"
+   3341656,
+   "e4e6e9033a4861a15c05a578634abf23ae5b5734b3ea16b56a800e759a21dea6"
   ],
   "app/game/vendor/fonts.css": [
    314,
@@ -2025,7 +2025,7 @@
   ],
   "package.json": [
    2194,
-   "c208c5ccdccc8dc7c1a5d826e5e5ca6a7d32e761648b314bd9fb23cb159036fc"
+   "a6bc6d75772154f6576e1e01478237ec79cb43930f0bd425da8af61dcaa5c844"
   ],
   "src/main.js": [
    8483,

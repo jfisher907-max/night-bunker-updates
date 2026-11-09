@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.74.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.75.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -6494,6 +6494,7 @@ void main() {
 }`;
   const DUST_VS = `
 uniform float uT; uniform vec3 uCam; uniform sampler2D nbBake; uniform vec4 nbBakeBox; uniform vec4 nbBakeP; uniform float nbBakeK2; uniform float uSize; attribute float aSeed; varying float vA;
+uniform vec4 uFlash; varying float vF;   // v6.75 the muzzle flash (xyz, intensity)
 void main() {
   vec3 p = position + vec3( sin( uT * 0.21 + aSeed * 6.0 ) * 0.6, sin( uT * 0.13 + aSeed * 9.0 ) * 0.35 - uT * 0.03, cos( uT * 0.17 + aSeed * 4.0 ) * 0.6 );
   vec3 box = vec3( 14.0, 4.0, 14.0 );
@@ -6504,12 +6505,13 @@ void main() {
   vec4 mv = modelViewMatrix * vec4( p, 1.0 );
   float d = -mv.z;
   vA = min( 1.0, ( b.r * b.r * nbBakeP.x + b.a * b.a * nbBakeK2 ) * 1.2 ) * smoothstep( 0.6, 2.0, d ) * ( 1.0 - smoothstep( 6.0, 7.0, length( p.xz - uCam.xz ) ) ) * step( 0.0, ht ) * ( 0.5 + 0.5 * fract( aSeed * 37.0 ) );
+  { vec3 fd = uFlash.xyz - p; vF = uFlash.w * 0.4 / ( 1.0 + dot( fd, fd ) * 1.5 ) * smoothstep( 0.35, 1.2, d ) * step( 0.0, ht ) * ( 0.6 + 0.4 * fract( aSeed * 37.0 ) ); }   // v6.75 motes caught in the flash
   gl_PointSize = uSize * ( 0.6 + fract( aSeed * 13.0 ) ) / max( d, 0.5 );
   gl_Position = projectionMatrix * mv;
 }`;
   const DUST_FS = `
-uniform vec3 uCol; uniform float uA; varying float vA;
-void main() { vec2 c = gl_PointCoord - 0.5; float r = dot( c, c ) * 4.0; gl_FragColor = vec4( uCol * vA * uA * ( 1.0 - r ) * step( r, 1.0 ), 1.0 ); }`;
+uniform vec3 uCol; uniform vec3 uFlashCol; uniform float uA; varying float vA; varying float vF;
+void main() { vec2 c = gl_PointCoord - 0.5; float r = dot( c, c ) * 4.0; gl_FragColor = vec4( ( uCol * vA + uFlashCol * vF ) * uA * ( 1.0 - r ) * step( r, 1.0 ), 1.0 ); }`;
   const MAXL = 96;
   function makeGlow() {
     const add = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false };
@@ -6524,7 +6526,7 @@ void main() { vec2 c = gl_PointCoord - 0.5; float r = dot( c, c ) * 4.0; gl_Frag
     for (let i = 0; i < ND; i++) { pos[i * 3] = Math.random() * 14; pos[i * 3 + 1] = Math.random() * 4; pos[i * 3 + 2] = Math.random() * 14; seed[i] = Math.random(); }
     const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); dg.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
     const dustMat = new THREE.ShaderMaterial(Object.assign({ vertexShader: DUST_VS, fragmentShader: DUST_FS,
-      uniforms: { uT: U.nbT, uCam: { value: new THREE.Vector3() }, nbBake: U.nbBake, nbBakeBox: U.nbBakeBox, nbBakeP: U.nbBakeP, nbBakeK2: U.nbBakeK2, uSize: { value: 5 }, uCol: { value: new THREE.Color(1.0, 0.8, 0.6) }, uA: { value: 0.55 } } }, add));
+      uniforms: { uT: U.nbT, uCam: { value: new THREE.Vector3() }, nbBake: U.nbBake, nbBakeBox: U.nbBakeBox, nbBakeP: U.nbBakeP, nbBakeK2: U.nbBakeK2, uSize: { value: 5 }, uCol: { value: new THREE.Color(1.0, 0.8, 0.6) }, uA: { value: 0.55 }, uFlash: { value: new THREE.Vector4(0, -1e4, 0, 0) }, uFlashCol: { value: new THREE.Color(1.0, 0.7, 0.4) } } }, add));
     const dust = new THREE.Points(dg, dustMat); dust.frustumCulled = false; dust.renderOrder = 6;
     const grp = new THREE.Group(); grp.name = 'nbGfx6'; grp.add(halos, cones, dust);
     return { grp, halos, cones, dust, haloMat, coneMat, dustMat, list: [] };
@@ -6827,6 +6829,7 @@ class PostFX {
       volDensity: 0.03, volMoon: 1.1, volLamp: 0.6, volDist: 40, volK: 1.0, ssrK: 1.0, ssrDist: 32, sharpen: 0.42, uAo: 0.95,   // v6.45 Ultra
       contact: 0.7,   // v6.73 contact shadows (High/Ultra)
       mblur: 0.6, mblurMax: 22, adapt: 1.0, adaptKey: 0.045, adaptUp: 2.2, adaptDown: 0.9,   // v6.74 camera motion blur, eye adaptation
+      gi: 0.85, giRadius: 1.8, giGain: 1.0, ssrHigh: 0.8, lampCs: 0.6,   // v6.75 bounce light, reflections on High, lamp contact shadows
     };
     this.info = { isWebGL2: this.isWebGL2, halfFloat: this.halfFloat, multisample: false, fxaa: false, bloom: false, width: 0, height: 0 };
 
@@ -6905,6 +6908,8 @@ class PostFX {
       const aw = Math.max(1, Math.ceil(W / 2)), ah = Math.max(1, Math.ceil(H / 2));
       this._ao = [new THREE.WebGLRenderTarget(aw, ah, ao), new THREE.WebGLRenderTarget(aw, ah, ao)]; this._aoTexel = new THREE.Vector2(1 / aw, 1 / ah);
       if (!document.documentElement.classList.contains('touch')) this._mbT = new THREE.WebGLRenderTarget(W, H, Object.assign({ depthBuffer: false, stencilBuffer: false }, common));   // v6.74 motion blur target (desktop)
+      const gw = Math.max(1, Math.ceil(W / 4)), gh = Math.max(1, Math.ceil(H / 4));   // v6.75 bounce light at quarter res (range-compressed rgb, linear depth in a)
+      this._gi = [new THREE.WebGLRenderTarget(gw, gh, ao), new THREE.WebGLRenderTarget(gw, gh, ao)]; this._giTexel = new THREE.Vector2(1 / gw, 1 / gh);
     }
     if (high) {   // v6.74 eye adaptation: a 1x1 log-average luminance, eased over time (two tiny targets, 16-bit packed in RGBA8)
       const lo = { type: THREE.UnsignedByteType, format: THREE.RGBAFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false, depthBuffer: false, stencilBuffer: false };
@@ -6916,6 +6921,7 @@ class PostFX {
       this._ssr = new THREE.WebGLRenderTarget(Math.ceil(W / (lite ? 4 : 2)), Math.ceil(H / (lite ? 4 : 2)), fo);
       this._vol = new THREE.WebGLRenderTarget(Math.ceil(W / (lite ? 8 : 4)), Math.ceil(H / (lite ? 8 : 4)), fo);
     }
+    if (aoOn && !ultraOn && !document.documentElement.classList.contains('touch')) this._ssr = new THREE.WebGLRenderTarget(Math.ceil(W / 2), Math.ceil(H / 2), Object.assign({ depthBuffer: false, stencilBuffer: false }, common));   // v6.75 reflections on High (desktop)
 
     if (high) {
       const bo = Object.assign({ depthBuffer: false, stencilBuffer: false }, common);
@@ -6958,6 +6964,7 @@ class PostFX {
     this._dof = [null, null];
     for (const t of (this._ao || [])) if (t) t.dispose();
     this._ao = [null, null];
+    for (const t of (this._gi || [])) if (t) t.dispose(); this._gi = null; this._giOn = false; this._ssrHi = false;   // v6.75
     if (this._mbT) this._mbT.dispose(); this._mbT = null; if (this._lum) this._lum.dispose(); this._lum = null; for (const t of (this._adapt || [])) if (t) t.dispose(); this._adapt = null; this._adaptOK = 0; this._mbOK = 0;   // v6.74
     for (const t of (this._hist || [])) if (t) t.dispose();
     if (this._ssr) this._ssr.dispose(); if (this._vol) this._vol.dispose();
@@ -6987,15 +6994,38 @@ class PostFX {
     r.render(scene, camera);
     // v6.42 SSAO (High): read the scene's depth before the arms and gun go in; the governor's resolution step turns it off
     const aoK = this._ao[0] ? (ultra ? S.uAo : S.ao) * ((typeof G !== 'undefined' && G.govScale && G.govScale < 0.99) ? 0 : 1) : 0;
+    this._giOn = false; this._ssrHi = false;
     if (aoK > 0.001 || ultra) {   // Ultra always runs it: its linear depth drives the reprojection
       const su = this._ssao.uniforms, pe = camera.projectionMatrix.elements;
       su.tDepth.value = this.sceneTarget.depthTexture; su.res.value.set(this._w, this._h); su.near.value = camera.near; su.far.value = camera.far;
       su.projK.value.set(pe[0], pe[5]); su.radius.value = S.aoRadius; su.intensity.value = S.aoIntensity; su.bias.value = S.aoBias;
       su.csK.value = aoK > 0.001 ? S.contact : 0; if (p.moonDir) su.moonV.value.copy(p.moonDir).transformDirection(camera.matrixWorldInverse);   // v6.73 contact shadows march toward the moon
+      {   // v6.75 the four lit lamps nearest the camera, in view space, for the lamp contact shadows
+        const cp = (this._v3b || (this._v3b = new THREE.Vector3())).setFromMatrixPosition(camera.matrixWorld); this._lights(scene, cp);   /* its own vector: _lights uses _v3a as a scratch */ const LP = this._volMat.uniforms.lampP.value, LV = su.lampV.value, v4 = this._v4a || (this._v4a = new THREE.Vector4());
+        for (let i = 0; i < 4; i++) { const w = LP[i]; if (w.y < -1e3) { LV[i].set(0, 0, -1e4, 1); continue; } v4.set(w.x, w.y, w.z, 1).applyMatrix4(camera.matrixWorldInverse); LV[i].set(v4.x, v4.y, v4.z, w.w); }
+        su.lampK.value = aoK > 0.001 ? S.lampCs : 0;
+      }
       this._pass(this._ssao, this._ao[0]);
       const bu = this._aoBlur.uniforms; bu.far.value = camera.far;
       bu.tInput.value = this._ao[0].texture; bu.dir.value.set(this._aoTexel.x, 0); this._pass(this._aoBlur, this._ao[1]);
       bu.tInput.value = this._ao[1].texture; bu.dir.value.set(0, this._aoTexel.y); this._pass(this._aoBlur, this._ao[0]);
+      // v6.75 bounce light (quarter res, then a depth-aware blur) and the reflections on High; both read the world before the arms go in
+      const giUser = window.NBX && NBX.gi != null ? NBX.gi : 1;
+      this._giOn = !!(this._gi && aoK > 0.001 && giUser > 0 && S.gi > 0.001);
+      if (this._giOn) {
+        const gu = this._giMat.uniforms; gu.tDepth.value = this.sceneTarget.depthTexture; gu.tScene.value = this.sceneTarget.texture; gu.res.value.set(this._w, this._h); gu.near.value = camera.near; gu.far.value = camera.far; gu.projK.value.set(pe[0], pe[5]);
+        gu.radius.value = S.giRadius; gu.gain.value = S.giGain; gu.frame.value = ultra ? this._frame % 8 : 0;
+        this._pass(this._giMat, this._gi[0]);
+        const gb = this._giBlur.uniforms; gb.far.value = camera.far;
+        gb.tInput.value = this._gi[0].texture; gb.dir.value.set(this._giTexel.x, 0); this._pass(this._giBlur, this._gi[1]);
+        gb.tInput.value = this._gi[1].texture; gb.dir.value.set(0, this._giTexel.y); this._pass(this._giBlur, this._gi[0]);
+      }
+      this._ssrHi = !!(this._ssr && !ultra && aoK > 0.001 && S.ssrHigh > 0.001);
+      if (this._ssrHi) {
+        const sr = this._ssrMat.uniforms; sr.tDepth.value = this.sceneTarget.depthTexture; sr.tScene.value = this.sceneTarget.texture; sr.res.value.set(this._w, this._h); sr.projK.value.set(pe[0], pe[5]);
+        sr.near.value = camera.near; sr.far.value = camera.far; sr.frame.value = 0; sr.maxDist.value = S.ssrDist; sr.steps.value = 24;
+        this._pass(this._ssrMat, this._ssr);
+      }
       if (ultra) this._ultraPasses(scene, camera);   // v6.45 needs the scene's depth, before it is cleared
       r.setRenderTarget(this.sceneTarget); r.clearDepth();   // cleared depth = no arms there: the composite masks AO off the viewmodel by it
       if (!overlayScene) { if (!this._empty) this._empty = new THREE.Scene(); r.render(this._empty, camera); }
@@ -7098,6 +7128,7 @@ class PostFX {
     u.bloomWeights.value.set(S.bloomHalfWeight, S.bloomQuarterWeight);
     u.ads.value = ads > 0.02 ? ads : 0; u.tDof.value = this._dof[0] ? this._dof[0].texture : null;
     u.aoStrength.value = aoK; u.csStrength.value = aoK > 0.001 ? S.contact : 0; u.tAO.value = this._ao[0] ? this._ao[0].texture : null; u.tDepthV.value = this.sceneTarget.depthTexture || null;
+    u.tGI.value = this._giOn ? this._gi[0].texture : null; u.giK.value = this._giOn ? S.gi : 0; u.tSSR.value = this._ssrHi ? this._ssr.texture : null; u.ssrK.value = this._ssrHi ? S.ssrHigh : 0;   // v6.75
     if (typeof Gfx6 !== 'undefined') { const V = Gfx6.vision; u.vDesat.value = V.desat; u.vContrast.value = V.contrast; u.vBright.value = V.bright + (window.NBX ? NBX.brightAdd : 0); u.vLight.value.copy(V.light); u.vDark.value.copy(V.dark); if (Gfx6.floorPost) { u.vFloor.value = Gfx6.floorPost.lum; u.vToe.value = Gfx6.floorPost.toe; u.vFloorTint.value.copy(Gfx6.floorPost.tint); } }
     this._quad.material = this._composite;
     r.setRenderTarget(null);
@@ -7133,7 +7164,7 @@ class PostFX {
     const c = this._lc || (this._lc = { t: 0, scene: null, all: [], sun: null });
     if (c.scene !== scene || --c.t <= 0) {
       c.t = 30; c.scene = scene; c.all.length = 0; c.sun = null;
-      c.far = null; scene.traverseVisible(o => { if (!o.isLight) return; if (o.isDirectionalLight) { if (o.userData && o.userData.nbFar) c.far = o; else if (!c.sun || o.castShadow) c.sun = o; } else if ((o.isPointLight || o.isSpotLight) && o.intensity > 0) c.all.push(o); if (!o.isDirectionalLight && o.castShadow && o.shadow && o.shadow.mapSize.x === 512) { o.shadow.mapSize.set(1024, 1024); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } });   // sharper lamp shadows
+      c.far = null; scene.traverseVisible(o => { if (!o.isLight) return; if (o.isDirectionalLight) { if (o.userData && o.userData.nbFar) c.far = o; else if (!c.sun || o.castShadow) c.sun = o; } else if ((o.isPointLight || o.isSpotLight) && o.intensity > 0) c.all.push(o); if (!o.isDirectionalLight && o.castShadow && o.shadow && o.shadow.mapSize.x === 512) { o.shadow.mapSize.set(1024, 1024); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } o.shadow.needsUpdate = true; } });   // sharper lamp shadows (v6.75: the cached map re-renders at once, or the lamp is dark until its next bake)
     }
     const vu = this._volMat.uniforms, P = vu.lampP.value, C = vu.lampC.value, v = this._v3a;
     const near = c.all.map(o => [o, v.setFromMatrixPosition(o.matrixWorld).distanceToSquared(cam)]).filter(a => a[1] < 1600 && a[1] > 9 && !(a[0].distance > 0 && a[0].distance < 5)).sort((a, b) => a[1] - b[1]);   // v6.49.4 no lights at the gun or tiny flicker lights
@@ -7200,13 +7231,17 @@ class PostFX {
       ads: { value: 0 }, tDof: { value: null }, vDesat: { value: 0.15 }, vContrast: { value: 1.1 }, vBright: { value: 0 }, vFloor: { value: 0 }, vToe: { value: 9 }, vFloorTint: { value: new THREE.Vector3(1, 1, 1) }, vLight: { value: new THREE.Vector3(1, 1, 1) }, vDark: { value: new THREE.Vector3(1, 1, 1) },
     }, { USE_BLOOM: 1, USE_FXAA: 0, USE_SSAO: 0, USE_SHARPEN: 0 });
     const cu0 = this._composite.uniforms; cu0.tAO = { value: null }; cu0.tDepthV = { value: null }; cu0.aoStrength = { value: 0 };
-    this._ssao = mk(PostFX.FRAG_SSAO, { tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 0.6 }, intensity: { value: 1.5 }, bias: { value: 0.06 }, projK: { value: new THREE.Vector2(1, 1) }, moonV: { value: new THREE.Vector3(0, 1, 0) }, csK: { value: 0 } });
+    this._ssao = mk(PostFX.FRAG_SSAO, { tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 0.6 }, intensity: { value: 1.5 }, bias: { value: 0.06 }, projK: { value: new THREE.Vector2(1, 1) }, moonV: { value: new THREE.Vector3(0, 1, 0) }, csK: { value: 0 },
+      lampV: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, -1e4, 1)) }, lampK: { value: 0 } });   // v6.75 lamp contact shadows
+    this._giMat = mk(PostFX.FRAG_GI, { tDepth: { value: null }, tScene: { value: null }, res: { value: new THREE.Vector2(1, 1) }, projK: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 1.8 }, gain: { value: 1 }, frame: { value: 0 } });
+    this._giBlur = mk(PostFX.FRAG_GIBLUR, { tInput: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, far: { value: 100 } });
     this._aoBlur = mk(PostFX.FRAG_AOBLUR, { tInput: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, far: { value: 100 } });
     // v6.74 camera motion blur + eye adaptation
     this._mb = mk(PostFX.FRAG_MBLUR, { tScene: { value: null }, tLin: { value: null }, tDepthV: { value: null }, res: { value: new THREE.Vector2(1, 1) }, projK: { value: new THREE.Vector2(1, 1) }, camWorld: { value: new THREE.Matrix4() }, prevVP: { value: new THREE.Matrix4() }, far: { value: 100 }, k: { value: 0 }, maxPx: { value: 20 } });
     this._lumMat = mk(PostFX.FRAG_LUM, { tInput: { value: null } });
     this._adaptMat = mk(PostFX.FRAG_ADAPT, { tCur: { value: null }, tPrev: { value: null }, dt: { value: 0.016 }, up: { value: 2 }, down: { value: 1 }, reset: { value: 1 } });
     const cu1 = this._composite.uniforms; cu1.tLum = { value: null }; cu1.adaptK = { value: 0 }; cu1.adaptKey = { value: 0.045 };
+    cu1.tGI = { value: null }; cu1.giK = { value: 0 }; cu1.tSSR = { value: null }; cu1.ssrK = { value: 0 };   // v6.75
     // v6.45 Ultra passes
     this._v3a = new THREE.Vector3();
     cu0.sharpen = { value: 0 };
@@ -7296,6 +7331,7 @@ uniform vec2 res;
 uniform float near, far, radius, intensity, bias;
 uniform vec2 projK;
 uniform vec3 moonV; uniform float csK;
+uniform vec4 lampV[4]; uniform float lampK;   // v6.75
 varying vec2 vUv;
 float vz(vec2 uv) { float d = texture2D(tDepth, uv).r; return (near * far) / ((far - near) * d - far); }
 vec3 vp(vec2 uv) { float z = vz(uv); return vec3((uv * 2.0 - 1.0) / projK * -z, z); }
@@ -7331,6 +7367,23 @@ void main() {
       if (dz > 0.012 + 0.004 * -P.z && dz < 0.32) { cs = 0.35 + 0.65 * t * t; break; }
     }
     cs = mix(cs, 1.0, smoothstep(18.0, 36.0, -P.z));
+  }
+  if (lampK > 0.001) {   // v6.75 lamp contact shadows: the same short march toward the nearest lit lamp in view, weighted by how much of its light reaches here
+    float ld = 1e9, lrng = 1.0; vec3 ldir = vec3(0.0);
+    for (int k = 0; k < 4; k++) { vec3 dl = lampV[k].xyz - P; float dd = dot(dl, dl); if (lampV[k].z > -9e3 && dd < ld) { ld = dd; ldir = dl; lrng = lampV[k].w; } }
+    float dist = sqrt(ld); ldir /= max(dist, 1e-3);
+    float lw = smoothstep(lrng, lrng * 0.25, dist) * (1.0 - smoothstep(14.0, 28.0, -P.z));
+    if (ld < 1e8 && lw > 0.02 && dot(N, ldir) > 0.03) {
+      float jit2 = hash(gl_FragCoord.xy + 3.0), csl = 1.0;
+      for (int i = 1; i <= 6; i++) {
+        float t = (float(i) - 0.5 + jit2) / 6.0; vec3 q = P + ldir * (t * 0.36);
+        vec2 quv = (q.xy / -q.z * projK) * 0.5 + 0.5;
+        if (quv.x < 0.0 || quv.x > 1.0 || quv.y < 0.0 || quv.y > 1.0) break;
+        float dz = vz(quv) - q.z;
+        if (dz > 0.012 + 0.004 * -P.z && dz < 0.3) { csl = 0.45 + 0.55 * t * t; break; }
+      }
+      cs = min(cs, mix(1.0, csl, lw * lampK));
+    }
   }
   gl_FragColor = vec4(ao, -P.z / far, cs, 1.0);
 }`;
@@ -7405,6 +7458,59 @@ void main() {
     s += a.r * wa + b.r * wb; s2 += a.b * wa + b.b * wb; w += wa + wb;
   }
   gl_FragColor = vec4(s / w, c.g, s2 / w, 1.0);
+}`;
+  // v6.75 screen-space bounce light (quarter res): the lit surfaces around a pixel, inside a hemisphere of `radius`, throw their
+  // colour onto it (the diffuse half of a screen-space GI; the moon bounce in the world shader covers what is off screen).
+  // Output rgb = bounce radiance, range-compressed c/(1+c); a = linear depth for the depth-aware blur.
+  static FRAG_GI = /* glsl */`
+precision highp float;
+uniform sampler2D tDepth, tScene;
+uniform vec2 res, projK;
+uniform float near, far, radius, gain, frame;
+varying vec2 vUv;
+float vz(vec2 uv) { float d = texture2D(tDepth, uv).r; return (near * far) / ((far - near) * d - far); }
+vec3 vp(vec2 uv) { float z = vz(uv); return vec3((uv * 2.0 - 1.0) / projK * -z, z); }
+float hash(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+void main() {
+  float d = texture2D(tDepth, vUv).r;
+  if (d >= 0.99999) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+  vec3 P = vp(vUv); vec2 px = 4.0 / res;
+  vec3 Pr = vp(vUv + vec2(px.x, 0.0)), Pl = vp(vUv - vec2(px.x, 0.0)), Pu = vp(vUv + vec2(0.0, px.y)), Pd = vp(vUv - vec2(0.0, px.y));
+  vec3 dx = abs(Pr.z - P.z) < abs(P.z - Pl.z) ? Pr - P : P - Pl;
+  vec3 dy = abs(Pu.z - P.z) < abs(P.z - Pd.z) ? Pu - P : P - Pd;
+  vec3 N = normalize(cross(dx, dy));
+  float sr = min(radius * projK.y * 0.5 / -P.z, 0.3);
+  float a0 = (hash(gl_FragCoord.xy) + frame * 0.125) * 6.2832, r2 = radius * radius;
+  vec3 acc = vec3(0.0);
+  for (int i = 0; i < 16; i++) {
+    float t = (float(i) + 0.5) / 16.0, a = a0 + t * 58.64;
+    vec2 uv2 = vUv + vec2(cos(a) * res.y / res.x, sin(a)) * sqrt(t) * sr;
+    if (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0) continue;
+    if (texture2D(tDepth, uv2).r >= 0.99999) continue;
+    vec3 v = vp(uv2) - P; float vv = dot(v, v);
+    if (vv > r2) continue;
+    float c = max(dot(v, N) * inversesqrt(vv + 1e-4) - 0.05, 0.0);
+    vec3 sc = min(texture2D(tScene, uv2).rgb, vec3(6.0));
+    acc += sc * c * (1.0 - vv / r2);
+  }
+  vec3 gi = acc * (gain * 0.125) * (1.0 - smoothstep(22.0, 40.0, -P.z));
+  gl_FragColor = vec4(gi / (1.0 + gi), -P.z / far);
+}`;
+  static FRAG_GIBLUR = /* glsl */`
+precision highp float;
+uniform sampler2D tInput;
+uniform vec2 dir;
+uniform float far;
+varying vec2 vUv;
+void main() {
+  vec4 c = texture2D(tInput, vUv); vec3 s = c.rgb * 0.3; float w = 0.3;
+  for (int i = 1; i <= 3; i++) {
+    float g = i == 1 ? 0.24 : i == 2 ? 0.13 : 0.05;
+    vec4 a = texture2D(tInput, vUv + dir * float(i)), b = texture2D(tInput, vUv - dir * float(i));
+    float wa = g * exp(-abs(a.a - c.a) * far * 2.0), wb = g * exp(-abs(b.a - c.a) * far * 2.0);
+    s += a.rgb * wa + b.rgb * wb; w += wa + wb;
+  }
+  gl_FragColor = vec4(s / w, c.a);
 }`;
 
 
@@ -7572,6 +7678,7 @@ varying vec2 vUv;
 #if USE_SSAO
 uniform sampler2D tAO, tDepthV;
 uniform float aoStrength, csStrength;
+uniform sampler2D tGI, tSSR; uniform float giK, ssrK;   // v6.75
 #endif
 
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
@@ -7646,7 +7753,16 @@ void main() {
   col = max(col, vec3(0.0));
 #if USE_SSAO
   // v6.42 ambient occlusion: not on the arms and gun (their pixels hold depth), eased off bright light so lamps keep their glow
-  if (aoStrength > 0.001 && texture2D(tDepthV, uv).r >= 0.99999) { vec4 nbA = texture2D(tAO, uv); float nbEase = 1.0 - smoothstep(0.5, 2.5, luma(col)); col *= mix(1.0, nbA.r, aoStrength * nbEase) * mix(1.0, nbA.b, csStrength * nbEase); }   // v6.73 + contact shadows
+  if (texture2D(tDepthV, uv).r >= 0.99999) {
+    if (ssrK > 0.001) { vec4 nbR = texture2D(tSSR, uv); col = mix(col, nbR.rgb, nbR.a * ssrK); }   // v6.75 reflections on High (Ultra folds them into its temporal resolve)
+    if (aoStrength > 0.001) { vec4 nbA = texture2D(tAO, uv); float nbEase = 1.0 - smoothstep(0.5, 2.5, luma(col)); col *= mix(1.0, nbA.r, aoStrength * nbEase) * mix(1.0, nbA.b, csStrength * nbEase);   // v6.73 + contact shadows
+      if (giK > 0.001) {   // v6.75 bounce light: what the lit surfaces nearby throw onto this one, tinted by its own colour (a dark pixel keeps a neutral tint)
+        vec4 nbG = texture2D(tGI, uv); vec3 nbGi = nbG.rgb / max(1.0 - nbG.rgb, vec3(0.02));
+        float nbLc = luma(col); vec3 nbChr = clamp(col / max(nbLc, 1e-4), 0.45, 1.7);
+        col += nbGi * 0.5 * mix(vec3(1.0), nbChr, smoothstep(0.0, 0.03, nbLc)) * giK * mix(1.0, nbA.r, 0.5);
+      }
+    }
+  }
 #endif
 #if USE_BLOOM
   if (ads > 0.001) col = mix(col, texture2D(tDof, uv).rgb, ads * 0.85 * smoothstep(0.035, 0.3, r2));
@@ -7683,7 +7799,7 @@ void main() {
   col *= mix(vDark, vLight, smoothstep(0.0, 0.6, sqrt(luma(col))));
   col = col * (1.0 - 0.012) + 0.012;                 // black lift
   if (bc > 0.001) {   // v6.71 bodycam sensor: a little flatter and cooler, highlights roll toward clipping
-    float lb = luma(col); col *= mix(1.0, 0.25 + 0.75 * smoothstep(0.0, 0.07, lb), 0.7 * bc);   // v6.74 the sensor's blacks sink col = mix(col, vec3(lb), 0.16 * bc); col *= mix(vec3(1.0), vec3(0.965, 1.015, 1.0), bc);
+    float lb = luma(col); col *= mix(1.0, 0.25 + 0.75 * smoothstep(0.0, 0.07, lb), 0.7 * bc);   /* v6.74 the sensor's blacks sink */ col = mix(col, vec3(lb), 0.16 * bc); col *= mix(vec3(1.0), vec3(0.965, 1.015, 1.0), bc);   /* v6.75 the flat, cool grade is back */
     col = mix(col, 1.0 - (1.0 - col) * (1.0 - col), 0.14 * bc * smoothstep(0.4, 0.85, lb));
   }
 
@@ -13511,6 +13627,7 @@ const ViewModel = (() => {
       this.heat = Math.max(0, this.heat - dt * 0.35);
       if (this.heat > 0.6 && this.quality !== 'low' && !this.flashOn && (this.wispT -= dt) <= 0) { this.wispT = 0.09 + Math.random() * 0.08; this._smoke(0.02, 0.008, 0.05, Math.min(0.16, 0.05 + 0.04 * this.heat), 1.1); }
       for (let i = 0; i < this.smokes.length; i++) { const S = this.smokes[i]; if (S.life <= 0) continue; S.life -= dt; if (S.life <= 0) { S.sp.visible = false; continue; }
+        S.sp.material.color.setHex(0x6f6b64); if (this.flashOn && this.flash) { const dd = S.sp.position.distanceToSquared(this.flash.position); S.sp.material.color.lerp(this.flashLight.color, 0.75 / (1 + dd * 60)); }   // v6.75 the flash lights its own smoke
         const u = 1 - S.life / S.max; S.v.multiplyScalar(Math.exp(-dt * 2.5)); S.v.y += dt * 0.06; S.sp.position.addScaledVector(S.v, dt);
         const sc = S.s0 + (S.s1 - S.s0) * Math.sqrt(u); S.sp.scale.set(sc, sc, 1); S.sp.material.opacity = S.a * (u < 0.1 ? u / 0.1 : 1 - (u - 0.1) / 0.9); S.sp.material.rotation += dt * 0.4; }
       // ---- dispatch ----
@@ -20527,6 +20644,7 @@ moonFar.shadow.mapSize.set(2048, 2048); moonFar.shadow.camera.near = 1; moonFar.
 Object.assign(moonFar.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60 }); scene.add(moonFar); scene.add(moonFar.target);
 const muzzleLight = new THREE.PointLight(0xffb060, 0, 14, 1.6); scene.add(muzzleLight);
 const exLight = new THREE.PointLight(0xff7a30, 0, 18, 1.5); scene.add(exLight);
+const gunLight = new THREE.PointLight(0xffb060, 0, 9, 2), _gv = new THREE.Vector3(); gunLight.userData.nbGun = true; scene.add(gunLight);   // v6.75 the muzzle flash lights the world (in the scene from load: no light added mid-play)
 const powerLight = new THREE.PointLight(0x8af07a, 0, 7, 1.5); scene.add(powerLight);
 const torch = new THREE.SpotLight(0xffe6c0, 0, 22, 0.55, 0.5, 1.4); scene.add(torch); scene.add(torch.target);
 // environment map for metals / wet surfaces (vertex-coloured dome + a warm bulb; ShaderMaterial domes NaN under some GL stacks)
@@ -23579,7 +23697,7 @@ const Secrets = (() => {
 const NBX = window.NBX = (() => {
   'use strict';
   const DEF = { qpBright: 50, qpMusic: 80, qpSfx: 100, qpVoice: 100, qpAimKb: 'hold', qpAimPad: 'hold', qpAimTouch: 'toggle', qpSprintKb: 'hold', qpSprintPad: 'toggle', qpSprintTouch: 'toggle',
-    qpShake: 100, qpBob: 100, qpCam: 'std', qpMb: 'on', qpFps: 0, qpCap: 0, qpScale: 100, qpCb: 'off', qpHoldBuy: 1, qpMantle: 1, qpLone: 1, qpDmgNum: 0, qpHpBars: 0, qpGuide: 1, qpMapOpen: 1, qpRangeRound: 10 };
+    qpShake: 100, qpBob: 100, qpCam: 'std', qpMb: 'on', qpGi: 'on', qpFps: 0, qpCap: 0, qpScale: 100, qpCb: 'off', qpHoldBuy: 1, qpMantle: 1, qpLone: 1, qpDmgNum: 0, qpHpBars: 0, qpGuide: 1, qpMapOpen: 1, qpRangeRound: 10 };
   for (const k in DEF) if (meta[k] == null) meta[k] = DEF[k];
   if (!meta.qpGuideSeen || typeof meta.qpGuideSeen !== 'object') meta.qpGuideSeen = {};
   // key binding rows (spliced into NBQ.BINDS before its tables are built)
@@ -23637,7 +23755,7 @@ const NBX = window.NBX = (() => {
   const voiceAll = () => clamp(meta.vol == null ? 85 : +meta.vol, 0, 100) / 100 * voiceK();
 
   // ---------- Q4 shake and bob ----------
-  function applyMotion() { api.shakeK = clamp(+meta.qpShake, 0, 100) / 100; api.bobK = clamp(+meta.qpBob, 0, 100) / 100; api.bodycam = meta.qpCam === 'body' ? 1 : 0; api.mblur = meta.qpMb === 'off' ? 0 : 1; }   // v6.71 camera look, v6.74 motion blur
+  function applyMotion() { api.shakeK = clamp(+meta.qpShake, 0, 100) / 100; api.bobK = clamp(+meta.qpBob, 0, 100) / 100; api.bodycam = meta.qpCam === 'body' ? 1 : 0; api.mblur = meta.qpMb === 'off' ? 0 : 1; api.gi = meta.qpGi === 'off' ? 0 : 1; }   // v6.71 camera look, v6.74 motion blur, v6.75 bounce light
 
   // ---------- Q5 frame cap, FPS counter, render scale ----------
   let capLast = 0, fN = 0, fT0 = 0, fpsEl = null, fPrev = 0, fWorst = 0;
@@ -23705,6 +23823,8 @@ const NBX = window.NBX = (() => {
         '<p class="note">Bodycam: a chest-camera look with a wide fisheye lens, lens fringing, sensor noise, deeper blacks and a camera that sways with your stride.</p>' +
         seg('qpMb', 'MOTION BLUR', [['on', 'On'], ['off', 'Off']], meta.qpMb || 'on') +
         '<p class="note">Camera motion blur on High and Ultra (desktop). Off keeps every frame sharp.</p>' +
+        seg('qpGi', 'BOUNCE LIGHT', [['on', 'On'], ['off', 'Off']], meta.qpGi || 'on') +
+        '<p class="note">Light thrown back off the lit surfaces around you (High and Ultra). Off saves a little GPU time.</p>' +
         seg('qpCb', 'COLOUR VISION', [['off', 'Standard'], ['protan', 'Protan'], ['deutan', 'Deutan'], ['tritan', 'Tritan']], meta.qpCb) +
         '<h3 class="cxh">Aim, sprint and buying</h3>' +
         seg('qpAimKb', 'AIM (MOUSE)', HO, meta.qpAimKb) + seg('qpSprintKb', 'SPRINT (KEYBOARD)', HO, meta.qpSprintKb) +
@@ -23722,7 +23842,7 @@ const NBX = window.NBX = (() => {
       hook('qpBright', 'qpBright', F.bright, () => { applyBright(); drawCalib($('qpCal')); });
       hook('qpScale', 'qpScale', F.pct, applyScale); hook('qpShake', 'qpShake', F.pct, applyMotion); hook('qpBob', 'qpBob', F.pct, applyMotion);
       const segH = (id, key, num, after) => { const el = $(id); if (!el) return; el.querySelectorAll('button').forEach(x => x.addEventListener('click', () => { meta[key] = num ? +x.dataset.v : x.dataset.v; saveMeta(); el.querySelectorAll('button').forEach(y => y.classList.toggle('on', y === x)); after && after(); })); };
-      segH('qpCap', 'qpCap', true); segH('qpFps', 'qpFps', true, applyFps); segH('qpCam', 'qpCam', false, applyMotion); segH('qpMb', 'qpMb', false, applyMotion); segH('qpCb', 'qpCb', false, applyCb);
+      segH('qpCap', 'qpCap', true); segH('qpFps', 'qpFps', true, applyFps); segH('qpCam', 'qpCam', false, applyMotion); segH('qpMb', 'qpMb', false, applyMotion); segH('qpGi', 'qpGi', false, applyMotion); segH('qpCb', 'qpCb', false, applyCb);
       for (const k of ['qpAimKb', 'qpSprintKb', 'qpAimPad', 'qpSprintPad', 'qpAimTouch', 'qpSprintTouch']) segH(k, k, false, () => { kbLatch = false; });
       for (const k of ['qpHoldBuy', 'qpMantle', 'qpLone', 'qpDmgNum', 'qpHpBars', 'qpGuide']) segH(k, k, true);
       const rb = $('qpGuideReset'); if (rb) rb.addEventListener('click', () => { meta.qpGuideSeen = {}; saveMeta(); $('qpGuideN').textContent = '0 seen'; rb.textContent = 'Hints reset'; });
@@ -29086,17 +29206,18 @@ function vmMuzzleWorld(out) {
 const puffTex = (() => { const n = 64, c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d');
   for (let i = 0; i < 16; i++) { const px = n / 2 + (Math.random() - 0.5) * 24, py = n / 2 + (Math.random() - 0.5) * 24, r = 9 + Math.random() * 15, g = x.createRadialGradient(px, py, 0, px, py, r); g.addColorStop(0, 'rgba(255,255,255,.25)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, n, n); }
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t; })();
-const PUFFS = []; let puffHead = 0; const tmpV2 = new THREE.Vector3();
+const PUFFS = []; let puffHead = 0; const tmpV2 = new THREE.Vector3(), _pc = new THREE.Color();
 for (let i = 0; i < 48; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, transparent: true, depthWrite: false, opacity: 0 })); sp.visible = false; scene.add(sp); PUFFS.push({ sp, v: new THREE.Vector3(), life: 0, max: 1, s0: 0.1, s1: 0.5, a: 0.4, rise: 0 }); }
 function puff(pos, vel, color, s0, s1, a, life, rise = 0.15) {
   if (fx.quality === 'low' && a < 0.3) return;
   const P_ = PUFFS[puffHead]; puffHead = (puffHead + 1) % PUFFS.length;
-  P_.sp.position.copy(pos); P_.v.copy(vel); P_.sp.material.color.set(color); P_.s0 = s0; P_.s1 = s1; P_.a = a; P_.life = P_.max = life * rand(0.8, 1.2); P_.rise = rise; P_.sp.material.rotation = rand(0, 6.28); P_.sp.visible = true;
+  P_.sp.position.copy(pos); P_.v.copy(vel); P_.sp.material.color.set(color); P_.base = (P_.base || new THREE.Color()).set(color); P_.s0 = s0; P_.s1 = s1; P_.a = a; P_.life = P_.max = life * rand(0.8, 1.2); P_.rise = rise; P_.sp.material.rotation = rand(0, 6.28); P_.sp.visible = true;
 }
 function updatePuffs(dt) {
   for (const P_ of PUFFS) { if (P_.life <= 0) continue; P_.life -= dt; if (P_.life <= 0) { P_.sp.visible = false; continue; }
     const u = 1 - P_.life / P_.max; P_.v.multiplyScalar(Math.exp(-dt * 3)); P_.v.y += P_.rise * dt; P_.sp.position.addScaledVector(P_.v, dt);
-    const sc = P_.s0 + (P_.s1 - P_.s0) * Math.sqrt(u); P_.sp.scale.set(sc, sc, 1); P_.sp.material.opacity = P_.a * (u < 0.08 ? u / 0.08 : 1 - (u - 0.08) / 0.92); }
+    const sc = P_.s0 + (P_.s1 - P_.s0) * Math.sqrt(u); P_.sp.scale.set(sc, sc, 1); P_.sp.material.opacity = P_.a * (u < 0.08 ? u / 0.08 : 1 - (u - 0.08) / 0.92);
+    if (P_.base) { P_.sp.material.color.copy(P_.base); if (gunLight.intensity > 0.1) { const dd = P_.sp.position.distanceToSquared(gunLight.position); P_.sp.material.color.add(_pc.copy(gunLight.color).multiplyScalar(0.5 * gunLight.intensity / (1 + dd * 0.8))); } } }   // v6.75 flash-lit smoke and dust
 }
 // ---------- explosions / flashes ----------
 const fxList = []; const fxGeo = new THREE.SphereGeometry(1, 14, 10);
@@ -37017,6 +37138,12 @@ function updateLights(dt) {
   }
   hemi.intensity = 0.36 * (0.4 + 0.6 * ls) + lightning * 2.5; moon.intensity = 0.85 * (0.5 + 0.5 * ls) + lightning * 3;   // v6.30.1
   { const mc = moon.color, mi = moon.intensity * 0.34; Gfx6.uniforms.nbMoon.value.x = mc.r * mi; Gfx6.uniforms.nbMoon.value.y = mc.g * mi; Gfx6.uniforms.nbMoon.value.z = mc.b * mi; }   // v6.74 moon bounce colour
+  {   // v6.75 the muzzle flash in the world: rides just ahead of the camera while the shot's flash runs, then dies within the frame
+    const fl = P.flashT > 0 && fx.quality !== 'low' && G.state === 'play';
+    if (fl) { gunLight.intensity = (vm.type === 'energy' ? 2.2 : 3.0) * (0.85 + Math.random() * 0.3); if (vm.flashLight) gunLight.color.copy(vm.flashLight.color); _gv.set(0.08, -0.16, -0.8).applyQuaternion(camera.quaternion); gunLight.position.copy(camera.position).add(_gv); }
+    else gunLight.intensity = Math.max(0, gunLight.intensity - dt * 60);
+    const gw = Gfx6.glow; if (gw && gw.dustMat.uniforms.uFlash) { gw.dustMat.uniforms.uFlash.value.set(gunLight.position.x, gunLight.position.y, gunLight.position.z, gunLight.intensity); gw.dustMat.uniforms.uFlashCol.value.copy(gunLight.color); }
+  }
   if (run.mode === 'overrun') { hemi.intensity *= 1.85; moon.intensity *= 1.5; }   // v6.49.3 the field is moonlit
   vmHemi.intensity = 0.9 * (0.55 + 0.45 * ls) + lightning * 1.2; vmDir.intensity = 0.8 * (0.5 + 0.5 * ls); vmCold.intensity = 0.5 + lightning * 2.2;   // the arms and gun dim with the power and flash with the storm
   Gfx6.frame(dt, G.time, camera, P, roomLights, fx.quality, VML, zombies);

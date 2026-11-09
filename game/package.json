@@ -1,6 +1,6 @@
 {
   "name": "night-bunker",
-  "version": "6.73.1",
+  "version": "6.73.2",
   "description": "Night Bunker, a roguelite zombie survival shooter",
   "main": "src/main.js",
   "scripts": {

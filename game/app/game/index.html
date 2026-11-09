@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.73.1'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.73.2'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -5953,7 +5953,9 @@ void main() {
 `;
 })();
 // how many lamps per map carry a shadow map (cached; see nbShadowTick). Tablets keep it small, Ultra desktops get the most.
-function nbLampBudget(q) { if (q !== 'high') return 2; const t = document.documentElement.classList.contains('touch'); return t ? 3 : (window.meta && meta.ultra ? 10 : 6); }
+// v6.73.2: 2 on every tier. Each caster is a sampler in every lit program and the 16-unit GPUs (Windows Chrome via D3D11, iPad) hold 11 maps + 2 moon
+// cascades + these; raising it needs the sampler trim first (see night-bunker-v6-73-0-shadow.md).
+function nbLampBudget(q) { return 2; }
 const Gfx6 = (() => {
   'use strict';
   const white = new THREE.DataTexture(new Uint8Array([0, 255, 0, 0]), 1, 1, THREE.RGBAFormat); white.needsUpdate = true;

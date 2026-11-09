@@ -1,7 +1,7 @@
 {
- "version": "6.72.0",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/1ed86bf698e68682857be27a1b54c30ab7a77758/game/",
- "notes": "Night Bunker 6.72.0: The Dornfeld Line",
+ "version": "6.73.0",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/2a9f54a0d2b9f0683b96875264f113a003190375/game/",
+ "notes": "Night Bunker 6.73.0: light and shadow",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -2000,8 +2000,8 @@
    "a0eb43f7ea3ebff432b8e327c6489d73ab5930d933842aab5fb440e6942d2b2f"
   ],
   "app/game/index.html": [
-   3317710,
-   "e3759bd9c80962f22c0d7232400a0f5d9b82b45aeae8f0a434439c24f4200016"
+   3326898,
+   "cd156bd094c408d2a9ad141e72e3134e7cf62f0345b227361815bb73bcef9847"
   ],
   "app/game/vendor/fonts.css": [
    314,
@@ -2025,7 +2025,7 @@
   ],
   "package.json": [
    2194,
-   "0896bd79ba2a180632e56dc2ccdca8390d98c58447e4f041504944c2c8a26318"
+   "6ba97958cad433a9f2b17f3ba5f0ecbb1737af06c0393f68acf4bdeb78141313"
   ],
   "src/main.js": [
    8483,

@@ -1,7 +1,7 @@
 {
- "version": "6.73.0",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/2a9f54a0d2b9f0683b96875264f113a003190375/game/",
- "notes": "Night Bunker 6.73.0: light and shadow",
+ "version": "6.73.1",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/eeb5e204efd7be1828a9c96ed6bc45f31093835a/game/",
+ "notes": "Night Bunker 6.73.1",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -2000,8 +2000,8 @@
    "a0eb43f7ea3ebff432b8e327c6489d73ab5930d933842aab5fb440e6942d2b2f"
   ],
   "app/game/index.html": [
-   3326898,
-   "cd156bd094c408d2a9ad141e72e3134e7cf62f0345b227361815bb73bcef9847"
+   3327787,
+   "2efdf8b2d1aebe7ac8b89ae62a471c07b5d394527884d742093e97053494da21"
   ],
   "app/game/vendor/fonts.css": [
    314,
@@ -2025,7 +2025,7 @@
   ],
   "package.json": [
    2194,
-   "6ba97958cad433a9f2b17f3ba5f0ecbb1737af06c0393f68acf4bdeb78141313"
+   "8d8a185d8ba47575c4018328baeec34919aa1b39d33bc7ba3580ae2cc3b92799"
   ],
   "src/main.js": [
    8483,

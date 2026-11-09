@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.72.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.73.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -5906,6 +5906,54 @@ void main() {
 // Rules kept: no lights are added or removed; every material here exists from build() on and is in warm(); nothing allocates per frame.
 // API: Gfx6.build(o) at map build (after WorldFX.apply)  Gfx6.frame(dt, time, cam, P, lights, quality)  Gfx6.setQuality(q)
 //      Gfx6.sample(x, z) -> { L, ao }   Gfx6.hookWorld(shader)  Gfx6.claim(root)  Gfx6.vision (per-frame grade for PostFX)
+// v6.73 shadows. The moon's shadow comes from two maps: the near one that follows you (sharp) and a far one over the whole map
+// that renders once (static). Light 0 is the moon, light 1 the far cascade (a black light that only carries a shadow map). On Ultra
+// the near map is filtered PCSS-style: a blocker search sets the kernel, so shadows sharpen at the contact and soften with distance.
+(() => {
+  const SC = THREE.ShaderChunk;
+  const line = 'directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;';
+  if (SC.lights_fragment_begin.indexOf(line) < 0) { console.warn('nb shadow chunk anchor missing'); return; }
+  SC.lights_fragment_begin = SC.lights_fragment_begin.replace(line,
+    '#if ( NUM_DIR_LIGHT_SHADOWS > 1 ) && ( UNROLLED_LOOP_INDEX == 0 )\n' +
+    '\t\tdirectLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? nbMoonShadow( directionalShadowMap[ 0 ], directionalLightShadows[ 0 ], vDirectionalShadowCoord[ 0 ], directionalShadowMap[ 1 ], directionalLightShadows[ 1 ], vDirectionalShadowCoord[ 1 ] ) : 1.0;\n' +
+    '#elif ( NUM_DIR_LIGHT_SHADOWS > 1 ) && ( UNROLLED_LOOP_INDEX == 1 )\n' +
+    '#else\n\t\t' + line + '\n#endif');
+  SC.shadowmap_pars_fragment += `
+#if defined( USE_SHADOWMAP ) && ( NUM_DIR_LIGHT_SHADOWS > 1 )
+	uniform float nbPcss;
+	float nbPcssShadow( sampler2D map, vec2 size, float bias, vec4 coord ) {
+		vec3 c = coord.xyz / coord.w; c.z += bias;
+		vec2 tx = 1.0 / size;
+		float rot = fract( sin( dot( gl_FragCoord.xy, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) * 6.2832;
+		float bs = 0.0, bn = 0.0;
+		for ( int i = 0; i < 8; i ++ ) {
+			float a = rot + float( i ) * 2.4, r = sqrt( ( float( i ) + 0.5 ) * 0.125 ) * 6.0;
+			float d = unpackRGBAToDepth( texture2D( map, c.xy + vec2( cos( a ), sin( a ) ) * r * tx ) );
+			if ( d < c.z ) { bs += d; bn += 1.0; }
+		}
+		if ( bn < 0.5 ) return 1.0;
+		float pen = clamp( ( c.z - bs / bn ) * 1000.0, 1.0, 9.0 );
+		float sum = 0.0;
+		for ( int i = 0; i < 16; i ++ ) {
+			float a = rot + float( i ) * 2.4, r = sqrt( ( float( i ) + 0.5 ) * 0.0625 ) * pen;
+			sum += step( c.z, unpackRGBAToDepth( texture2D( map, c.xy + vec2( cos( a ), sin( a ) ) * r * tx ) ) );
+		}
+		return sum * 0.0625;
+	}
+	float nbMoonShadow( sampler2D nearMap, DirectionalLightShadow nearS, vec4 nearC, sampler2D farMap, DirectionalLightShadow farS, vec4 farC ) {
+		vec3 n = nearC.xyz / nearC.w;
+		float e = min( min( n.x, 1.0 - n.x ), min( n.y, 1.0 - n.y ) );
+		float inNear = smoothstep( 0.02, 0.08, e ) * step( n.z, 1.0 );
+		float sFar = getShadow( farMap, farS.shadowMapSize, farS.shadowBias, farS.shadowRadius, farC );
+		if ( inNear <= 0.0 ) return sFar;
+		float sNear = nbPcss > 0.5 ? nbPcssShadow( nearMap, nearS.shadowMapSize, nearS.shadowBias, nearC ) : getShadow( nearMap, nearS.shadowMapSize, nearS.shadowBias, nearS.shadowRadius, nearC );
+		return mix( sFar, sNear, inNear );
+	}
+#endif
+`;
+})();
+// how many lamps per map carry a shadow map (cached; see nbShadowTick). Tablets keep it small, Ultra desktops get the most.
+function nbLampBudget(q) { if (q !== 'high') return 2; const t = document.documentElement.classList.contains('touch'); return t ? 3 : (window.meta && meta.ultra ? 10 : 6); }
 const Gfx6 = (() => {
   'use strict';
   const white = new THREE.DataTexture(new Uint8Array([0, 255, 0, 0]), 1, 1, THREE.RGBAFormat); white.needsUpdate = true;
@@ -5915,6 +5963,7 @@ const Gfx6 = (() => {
     nbBakeP: { value: new THREE.Vector4(0, 1.25, 3.2, 1) },   // x bounce strength (R lamps), y AO strength, z wall height, w debug view
     nbBakeK2: { value: 0 },                                 // bounce strength of the A lamps (on 6.0 maps: the ones that stay lit without power)
     nbFloor: { value: new THREE.Vector4(0.86, 0.95, 1.2, 0.25) },   // v6.53 brightness floor: rgb moonlight tint, w the least light any surface gets
+    nbPcss: { value: 0 },   // v6.73 soft moon penumbrae (Ultra desktop)
   };
   // the grade each map is shot with (film tweak style: desaturation, contrast, brightness, highlight tint, shadow tint)
   const VISION = {
@@ -6141,7 +6190,7 @@ vec2 nbElev( float b ) { float c = b * 255.0, r = step( 127.5, c ); return vec2(
 		vNb6W = ( modelMatrix * nb6p ).xyz;
 	}
 `;
-  function uniforms(sh) { sh.uniforms.nbFloor = U.nbFloor; sh.uniforms.nbBakeK2 = U.nbBakeK2; sh.uniforms.nbBake = U.nbBake; sh.uniforms.nbBakeBox = U.nbBakeBox; sh.uniforms.nbBakeCol = U.nbBakeCol; sh.uniforms.nbBakeP = U.nbBakeP; }
+  function uniforms(sh) { sh.uniforms.nbPcss = U.nbPcss; sh.uniforms.nbFloor = U.nbFloor; sh.uniforms.nbBakeK2 = U.nbBakeK2; sh.uniforms.nbBake = U.nbBake; sh.uniforms.nbBakeBox = U.nbBakeBox; sh.uniforms.nbBakeCol = U.nbBakeCol; sh.uniforms.nbBakeP = U.nbBakeP; }
 
   // ------------------------------------------------------------------ anti-tiling (stochastic tiling + macro variation)
   // per texture: the pattern period in texture units (offsets snap to it so courses and seams line up); 0 = free
@@ -6701,6 +6750,7 @@ class PostFX {
       bloomHalfWeight: 0.6, bloomQuarterWeight: 1.0, bloomEighthWeight: 0.8, bloomRadius: 1.0,
       ao: 0.75, aoRadius: 0.6, aoIntensity: 1.5, aoBias: 0.06,   // v6.42 SSAO (High only)
       volDensity: 0.03, volMoon: 1.1, volLamp: 0.6, volDist: 40, volK: 1.0, ssrK: 1.0, ssrDist: 32, sharpen: 0.42, uAo: 0.95,   // v6.45 Ultra
+      contact: 0.7,   // v6.73 contact shadows (High/Ultra)
     };
     this.info = { isWebGL2: this.isWebGL2, halfFloat: this.halfFloat, multisample: false, fxaa: false, bloom: false, width: 0, height: 0 };
 
@@ -6859,6 +6909,7 @@ class PostFX {
       const su = this._ssao.uniforms, pe = camera.projectionMatrix.elements;
       su.tDepth.value = this.sceneTarget.depthTexture; su.res.value.set(this._w, this._h); su.near.value = camera.near; su.far.value = camera.far;
       su.projK.value.set(pe[0], pe[5]); su.radius.value = S.aoRadius; su.intensity.value = S.aoIntensity; su.bias.value = S.aoBias;
+      su.csK.value = aoK > 0.001 ? S.contact : 0; if (p.moonDir) su.moonV.value.copy(p.moonDir).transformDirection(camera.matrixWorldInverse);   // v6.73 contact shadows march toward the moon
       this._pass(this._ssao, this._ao[0]);
       const bu = this._aoBlur.uniforms; bu.far.value = camera.far;
       bu.tInput.value = this._ao[0].texture; bu.dir.value.set(this._aoTexel.x, 0); this._pass(this._aoBlur, this._ao[1]);
@@ -6940,7 +6991,7 @@ class PostFX {
     u.vignette.value = S.vignette; u.grain.value = S.grain; u.aberration.value = S.aberration; u.bodycam.value = window.NBX && NBX.bodycam && !(window.P && P.scoped) ? 1 : 0;   // v6.71
     u.bloomWeights.value.set(S.bloomHalfWeight, S.bloomQuarterWeight);
     u.ads.value = ads > 0.02 ? ads : 0; u.tDof.value = this._dof[0] ? this._dof[0].texture : null;
-    u.aoStrength.value = aoK; u.tAO.value = this._ao[0] ? this._ao[0].texture : null; u.tDepthV.value = this.sceneTarget.depthTexture || null;
+    u.aoStrength.value = aoK; u.csStrength.value = aoK > 0.001 ? S.contact : 0; u.tAO.value = this._ao[0] ? this._ao[0].texture : null; u.tDepthV.value = this.sceneTarget.depthTexture || null;
     if (typeof Gfx6 !== 'undefined') { const V = Gfx6.vision; u.vDesat.value = V.desat; u.vContrast.value = V.contrast; u.vBright.value = V.bright + (window.NBX ? NBX.brightAdd : 0); u.vLight.value.copy(V.light); u.vDark.value.copy(V.dark); if (Gfx6.floorPost) { u.vFloor.value = Gfx6.floorPost.lum; u.vToe.value = Gfx6.floorPost.toe; u.vFloorTint.value.copy(Gfx6.floorPost.tint); } }
     this._quad.material = this._composite;
     r.setRenderTarget(null);
@@ -6962,7 +7013,8 @@ class PostFX {
     let sun = L.sun; vu.shadowOn.value = 0;
     if (sun) {
       vu.moonCol.value.set(sun.color.r, sun.color.g, sun.color.b).multiplyScalar(sun.intensity); vu.moonDir.value.setFromMatrixPosition(sun.matrixWorld).sub(this._v3a.setFromMatrixPosition(sun.target.matrixWorld)).normalize();
-      if (sun.castShadow && sun.shadow.map && sun.shadow.map.texture) { vu.tShadow.value = sun.shadow.map.texture; vu.shadowM.value.copy(sun.shadow.matrix); vu.shadowOn.value = 1; }
+      const sm = L.far && L.far.castShadow && L.far.shadow.map ? L.far : sun;   // v6.73 the far cascade shadows the shafts across the whole map
+      if (sm.castShadow && sm.shadow.map && sm.shadow.map.texture) { vu.tShadow.value = sm.shadow.map.texture; vu.shadowM.value.copy(sm.shadow.matrix); vu.shadowOn.value = 1; }
     } else vu.moonCol.value.set(0, 0, 0);
     this._pass(this._volMat, this._vol);
     const su = this._ssrMat.uniforms;
@@ -6975,7 +7027,7 @@ class PostFX {
     const c = this._lc || (this._lc = { t: 0, scene: null, all: [], sun: null });
     if (c.scene !== scene || --c.t <= 0) {
       c.t = 30; c.scene = scene; c.all.length = 0; c.sun = null;
-      scene.traverseVisible(o => { if (!o.isLight) return; if (o.isDirectionalLight) { if (!c.sun || o.castShadow) c.sun = o; } else if ((o.isPointLight || o.isSpotLight) && o.intensity > 0) c.all.push(o); if (!o.isDirectionalLight && o.castShadow && o.shadow && o.shadow.mapSize.x === 512) { o.shadow.mapSize.set(1024, 1024); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } });   // sharper lamp shadows
+      c.far = null; scene.traverseVisible(o => { if (!o.isLight) return; if (o.isDirectionalLight) { if (o.userData && o.userData.nbFar) c.far = o; else if (!c.sun || o.castShadow) c.sun = o; } else if ((o.isPointLight || o.isSpotLight) && o.intensity > 0) c.all.push(o); if (!o.isDirectionalLight && o.castShadow && o.shadow && o.shadow.mapSize.x === 512) { o.shadow.mapSize.set(1024, 1024); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } });   // sharper lamp shadows
     }
     const vu = this._volMat.uniforms, P = vu.lampP.value, C = vu.lampC.value, v = this._v3a;
     const near = c.all.map(o => [o, v.setFromMatrixPosition(o.matrixWorld).distanceToSquared(cam)]).filter(a => a[1] < 1600 && a[1] > 9 && !(a[0].distance > 0 && a[0].distance < 5)).sort((a, b) => a[1] - b[1]);   // v6.49.4 no lights at the gun or tiny flicker lights
@@ -7033,12 +7085,12 @@ class PostFX {
       resolution: { value: new THREE.Vector2(1, 1) }, time: { value: 0 },
       hurt: { value: 0 }, flash: { value: 0 }, grayscale: { value: 0 }, lightning: { value: 0 },
       bloomStrength: { value: 1 }, exposure: { value: 1 }, saturation: { value: 0.85 },
-      vignette: { value: 0.45 }, grain: { value: 0.035 }, aberration: { value: 0.0025 }, bodycam: { value: 0 },
+      vignette: { value: 0.45 }, grain: { value: 0.035 }, aberration: { value: 0.0025 }, bodycam: { value: 0 }, csStrength: { value: 0 },
       bloomWeights: { value: new THREE.Vector2(0.6, 1.0) },
       ads: { value: 0 }, tDof: { value: null }, vDesat: { value: 0.15 }, vContrast: { value: 1.1 }, vBright: { value: 0 }, vFloor: { value: 0 }, vToe: { value: 9 }, vFloorTint: { value: new THREE.Vector3(1, 1, 1) }, vLight: { value: new THREE.Vector3(1, 1, 1) }, vDark: { value: new THREE.Vector3(1, 1, 1) },
     }, { USE_BLOOM: 1, USE_FXAA: 0, USE_SSAO: 0, USE_SHARPEN: 0 });
     const cu0 = this._composite.uniforms; cu0.tAO = { value: null }; cu0.tDepthV = { value: null }; cu0.aoStrength = { value: 0 };
-    this._ssao = mk(PostFX.FRAG_SSAO, { tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 0.6 }, intensity: { value: 1.5 }, bias: { value: 0.06 }, projK: { value: new THREE.Vector2(1, 1) } });
+    this._ssao = mk(PostFX.FRAG_SSAO, { tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 0.6 }, intensity: { value: 1.5 }, bias: { value: 0.06 }, projK: { value: new THREE.Vector2(1, 1) }, moonV: { value: new THREE.Vector3(0, 1, 0) }, csK: { value: 0 } });
     this._aoBlur = mk(PostFX.FRAG_AOBLUR, { tInput: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, far: { value: 100 } });
     // v6.45 Ultra passes
     this._v3a = new THREE.Vector3();
@@ -7128,13 +7180,14 @@ uniform sampler2D tDepth;
 uniform vec2 res;
 uniform float near, far, radius, intensity, bias;
 uniform vec2 projK;
+uniform vec3 moonV; uniform float csK;
 varying vec2 vUv;
 float vz(vec2 uv) { float d = texture2D(tDepth, uv).r; return (near * far) / ((far - near) * d - far); }
 vec3 vp(vec2 uv) { float z = vz(uv); return vec3((uv * 2.0 - 1.0) / projK * -z, z); }
 float hash(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
 void main() {
   float d = texture2D(tDepth, vUv).r;
-  if (d >= 0.99999) { gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0); return; }
+  if (d >= 0.99999) { gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); return; }
   vec3 P = vp(vUv); vec2 px = 1.0 / res;
   vec3 Pr = vp(vUv + vec2(px.x, 0.0)), Pl = vp(vUv - vec2(px.x, 0.0)), Pu = vp(vUv + vec2(0.0, px.y)), Pd = vp(vUv - vec2(0.0, px.y));
   vec3 dx = abs(Pr.z - P.z) < abs(P.z - Pl.z) ? Pr - P : P - Pl;
@@ -7151,7 +7204,20 @@ void main() {
   }
   float ao = clamp(1.0 - sum * intensity / 12.0, 0.0, 1.0);
   ao = mix(ao, 1.0, smoothstep(22.0, 45.0, -P.z));
-  gl_FragColor = vec4(ao, -P.z / far, 0.0, 1.0);
+  // v6.73 contact shadows: a short march toward the moon through the depth buffer; whatever stands in the way within 40 cm shades this pixel
+  float cs = 1.0;
+  if (csK > 0.001 && dot(N, moonV) > 0.03) {
+    float jit = hash(gl_FragCoord.yx + 7.0);
+    for (int i = 1; i <= 8; i++) {
+      float t = (float(i) - 0.5 + jit) / 8.0; vec3 q = P + moonV * (t * 0.42);
+      vec2 quv = (q.xy / -q.z * projK) * 0.5 + 0.5;
+      if (quv.x < 0.0 || quv.x > 1.0 || quv.y < 0.0 || quv.y > 1.0) break;
+      float dz = vz(quv) - q.z;
+      if (dz > 0.012 + 0.004 * -P.z && dz < 0.32) { cs = 0.35 + 0.65 * t * t; break; }
+    }
+    cs = mix(cs, 1.0, smoothstep(18.0, 36.0, -P.z));
+  }
+  gl_FragColor = vec4(ao, -P.z / far, cs, 1.0);
 }`;
   static FRAG_AOBLUR = /* glsl */`
 precision highp float;
@@ -7160,14 +7226,14 @@ uniform vec2 dir;
 uniform float far;
 varying vec2 vUv;
 void main() {
-  vec4 c = texture2D(tInput, vUv); float s = c.r * 0.3, w = 0.3;
+  vec4 c = texture2D(tInput, vUv); float s = c.r * 0.3, s2 = c.b * 0.3, w = 0.3;
   for (int i = 1; i <= 3; i++) {
     float g = i == 1 ? 0.24 : i == 2 ? 0.13 : 0.05;
     vec4 a = texture2D(tInput, vUv + dir * float(i)), b = texture2D(tInput, vUv - dir * float(i));
     float wa = g * exp(-abs(a.g - c.g) * far * 3.0), wb = g * exp(-abs(b.g - c.g) * far * 3.0);
-    s += a.r * wa + b.r * wb; w += wa + wb;
+    s += a.r * wa + b.r * wb; s2 += a.b * wa + b.b * wb; w += wa + wb;
   }
-  gl_FragColor = vec4(s / w, c.g, 0.0, 1.0);
+  gl_FragColor = vec4(s / w, c.g, s2 / w, 1.0);
 }`;
 
 
@@ -7333,7 +7399,7 @@ uniform vec3 vLight, vDark;
 varying vec2 vUv;
 #if USE_SSAO
 uniform sampler2D tAO, tDepthV;
-uniform float aoStrength;
+uniform float aoStrength, csStrength;
 #endif
 
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
@@ -7408,7 +7474,7 @@ void main() {
   col = max(col, vec3(0.0));
 #if USE_SSAO
   // v6.42 ambient occlusion: not on the arms and gun (their pixels hold depth), eased off bright light so lamps keep their glow
-  if (aoStrength > 0.001 && texture2D(tDepthV, uv).r >= 0.99999) col *= mix(1.0, texture2D(tAO, uv).r, aoStrength * (1.0 - smoothstep(0.5, 2.5, luma(col))));
+  if (aoStrength > 0.001 && texture2D(tDepthV, uv).r >= 0.99999) { vec4 nbA = texture2D(tAO, uv); float nbEase = 1.0 - smoothstep(0.5, 2.5, luma(col)); col *= mix(1.0, nbA.r, aoStrength * nbEase) * mix(1.0, nbA.b, csStrength * nbEase); }   // v6.73 + contact shadows
 #endif
 #if USE_BLOOM
   if (ads > 0.001) col = mix(col, texture2D(tDof, uv).rgb, ads * 0.85 * smoothstep(0.035, 0.3, r2));
@@ -14425,7 +14491,7 @@ const Environment = (() => {
       const sockG = track(new THREE.LatheGeometry([[0, 0], [0.024, 0], [0.028, 0.02], [0.028, 0.06], [0.02, 0.075], [0.012, 0.075], [0.012, 0.09], [0, 0.09]].map(p => new THREE.Vector2(p[0], p[1])), 12));
       const shadeG = track(new THREE.CylinderGeometry(0.05, 0.24, 0.13, 18, 1, true));
       const cordG = track(new THREE.CylinderGeometry(0.007, 0.007, 1, 5));
-      let shadowBudget = 2;   // v5.3: built for every tier, cast only on High (setQuality flips them)
+      let shadowBudget = nbLampBudget(ctx.quality);   // v5.3: built for every tier, cast only on High (setQuality flips them)
       const fm = new Merger(THREE), fmm = new THREE.Matrix4();
       const lampBox = track(new THREE.BoxGeometry(1, 1, 1)), lampCyl = track(new THREE.CylinderGeometry(1, 1, 1, 8));
       ctx.lightSpots.forEach((s, i) => {
@@ -15734,7 +15800,7 @@ const WorksDress = (() => {
     const bulbs = [];
     { const shadeG = track(new THREE.CylinderGeometry(0.1, 0.42, 0.26, 20, 1, true)), bulbG = track(new THREE.SphereGeometry(0.075, 10, 8));
       const bulbMat = new THREE.MeshStandardMaterial({ color: 0x332a20, emissive: 0xffd9a0, emissiveIntensity: 6, roughness: 0.25 });
-      let shadowBudget = 2;
+      let shadowBudget = nbLampBudget(ctx.quality);
       map.lightSpots.forEach((s, i) => {
         const zn = s.zone, fx = cc(s.x) + s.wdx * (CELL / 2), fz = cc(s.z) + s.wdz * (CELL / 2), ix = -s.wdx, iz = -s.wdz, fl = floorAt(cc(s.x), cc(s.z));
         let bx, by, bz, aim;
@@ -16180,7 +16246,7 @@ const HallDress = (() => {
     const bulbs = [];
     { const shadeG = track(new THREE.CylinderGeometry(0.1, 0.42, 0.26, 20, 1, true)), bulbG = track(new THREE.SphereGeometry(0.075, 10, 8));
       const bulbMat = track(new THREE.MeshStandardMaterial({ color: 0x332a20, emissive: 0xffd9a0, emissiveIntensity: 6, roughness: 0.25 }));
-      let shadowBudget = 2;
+      let shadowBudget = nbLampBudget(ctx.quality);
       map.lightSpots.forEach((s, i) => {
         const zn = s.zone, fx = cc(s.x) + s.wdx * (CELL / 2), fz = cc(s.z) + s.wdz * (CELL / 2), ix = -s.wdx, iz = -s.wdz, fl = floorAt(cc(s.x), cc(s.z));
         let bx, by, bz, aim; const inside = roofC(s.x, s.z);
@@ -16528,7 +16594,7 @@ const MarshDress = (() => {
     const bulbs = [];
     { const bulbG = track(new THREE.SphereGeometry(0.075, 10, 8));
       const bulbMat = track(new THREE.MeshStandardMaterial({ color: 0x332a20, emissive: 0xffc480, emissiveIntensity: 6, roughness: 0.25 }));
-      let shadowBudget = 2;
+      let shadowBudget = nbLampBudget(ctx.quality);
       map.lightSpots.forEach((s, i) => {
         const zn = s.zone, fx = cc(s.x) + s.wdx * (CELL / 2), fz = cc(s.z) + s.wdz * (CELL / 2), ix = -s.wdx, iz = -s.wdz, fl = floorAt(cc(s.x), cc(s.z));
         let bx, by, bz, aim; const inside = roofC(s.x, s.z);
@@ -16903,7 +16969,7 @@ const MoonDress = (() => {
     const bulbs = [];
     { const bulbG = track(new THREE.SphereGeometry(0.075, 10, 8));
       const bulbMat = track(new THREE.MeshStandardMaterial({ color: 0x20242a, emissive: 0xe4eeff, emissiveIntensity: 6, roughness: 0.25 }));
-      let shadowBudget = 2;
+      let shadowBudget = nbLampBudget(ctx.quality);
       map.lightSpots.forEach((s, i) => {
         const fx = cc(s.x) + s.wdx * (CELL / 2), fz = cc(s.z) + s.wdz * (CELL / 2), ix = -s.wdx, iz = -s.wdz, fl = floorAt(cc(s.x), cc(s.z));
         let bx, by, bz, aim; const inside = roofC(s.x, s.z), dome0 = !!dome && s.x >= dome.x0 && s.x <= dome.x1 && s.z >= dome.z0 && s.z <= dome.z1;
@@ -20279,6 +20345,10 @@ const hemi = new THREE.HemisphereLight(0x4e5e8a, 0x1a140e, 0.45); scene.add(hemi
 const moon = new THREE.DirectionalLight(0x9fb2e0, 0.6); moon.position.set(-40, 60, 25); moon.castShadow = true;
 moon.shadow.mapSize.set(2048, 2048); moon.shadow.camera.near = 10; moon.shadow.camera.far = 160; moon.shadow.bias = -0.0008; moon.shadow.normalBias = 0.03;
 Object.assign(moon.shadow.camera, { left: -50, right: 50, top: 50, bottom: -50 }); scene.add(moon); scene.add(moon.target);
+// v6.73 far cascade: a black light whose shadow map covers the whole map and renders once per map (nbShadowBake); the chunk patch reads it as light 1
+const moonFar = new THREE.DirectionalLight(0x000000, 0); moonFar.castShadow = true; moonFar.userData.nbFar = true; moonFar.shadow.autoUpdate = false; moonFar.shadow.needsUpdate = true;
+moonFar.shadow.mapSize.set(2048, 2048); moonFar.shadow.camera.near = 1; moonFar.shadow.camera.far = 320; moonFar.shadow.bias = -0.0006; moonFar.shadow.normalBias = 0.06;
+Object.assign(moonFar.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60 }); scene.add(moonFar); scene.add(moonFar.target);
 const muzzleLight = new THREE.PointLight(0xffb060, 0, 14, 1.6); scene.add(muzzleLight);
 const exLight = new THREE.PointLight(0xff7a30, 0, 18, 1.5); scene.add(exLight);
 const powerLight = new THREE.PointLight(0x8af07a, 0, 7, 1.5); scene.add(powerLight);
@@ -21891,6 +21961,9 @@ function buildWorld(seed, style) {
   Weather.applyEnv(env);   // v6.35
   moon.target.position.set(bcx, 0, bcz); moon.position.set(bcx - 40, 60, bcz + 25);
   if (env.moonDir) moon.position.copy(env.moonDir).multiplyScalar(80).add(new THREE.Vector3(bcx, 0, bcz));
+  { const half = Math.max(B.maxX - B.minX + 1, B.maxZ - B.minZ + 1) * CELL * 0.62 + 10, fc = moonFar.shadow.camera;   // v6.73 the far cascade frames the whole map
+    moonFar.target.position.set(bcx, 0, bcz); moonFar.position.copy(moon.position).sub(moon.target.position).normalize().multiplyScalar(140).add(moonFar.target.position);
+    Object.assign(fc, { left: -half, right: half, top: half, bottom: -half }); fc.updateProjectionMatrix(); moonFar.shadow.needsUpdate = true; }
   // v5.3 world pass: wet ground and puddles outdoors (it always rains on the open maps), damp floors in the bunker, ground mist, contact shadows
   buildPower(); buildTraps(); try { Tac.build(seed); } catch (e) { console.warn('tac', e); } try { Secrets.build(seed, style); } catch (e) { console.warn('secrets', e); } try { Build.build(seed, style); } catch (e) { console.warn('build', e); } try { Kino.build(seed, style); } catch (e) { console.warn('kino', e); } try { Trials.build(seed, style); } catch (e) { console.warn('trials', e); } if (dress && dress.setPower) dress.setPower(false);
   try { Outpost.build(style); } catch (e) { console.warn('outpost', e); }   // v6.9
@@ -21934,6 +22007,7 @@ function buildWorld(seed, style) {
     Gfx6.claim(world); Gfx6.aniso(world, fx.quality, renderer); if (window.__nbGfxLog) console.log('gfx6 bake', JSON.stringify(gi));
   } catch (e) { console.error('Gfx6 build', e); }
   WorldFX.moonDir = moon.position.clone().sub(moon.target.position).normalize();
+  nbShadowCollect(); nbShadowSchedule();   // v6.73 cached lamp and far-moon shadow maps
   buildRisers();   // v6.4, after MapDetail has put its clutter down
 }
 let winMatCache = {};
@@ -22040,6 +22114,7 @@ function buildDoors() {
   }
 }
 function openDoor(d) {
+  nbShadowBake(1400); nbShadowBake(4000);   // v6.73 the cached shadows learn the open door
   d.open = true; d.anim = 0.001;
   for (const [x, z] of d.cells) grid[z][x] = '.';
   zoneOpen[d.zone] = true; if (d.from != null) zoneOpen[d.from] = true; flowDirty = true;
@@ -27092,7 +27167,7 @@ function buildPower() {
 function powerOn() {
   if (G.power) return;
   G.power = true; POWER.t = 0; powerLampMat.emissive.set(0x40ff50);
-  if (dress && dress.setPower) dress.setPower(true);
+  if (dress && dress.setPower) dress.setPower(true); nbShadowBake(300);   // v6.73
   sfx.powerOn && sfx.powerOn(POWER.x, POWER.z); banner('POWER ON', '#ffd36a', 2.6, 'Perks, the Ether Press' + (TRAPS.length ? ' and the arc gates' : '') + ' are live');
   P.shake = Math.min(1, (P.shake || 0) + 0.35); emit('onPower');
   // each perk machine plays its jingle once, a beat apart, as the current reaches it
@@ -35654,7 +35729,9 @@ function setQuality(q, fromAuto) {
   renderer.shadowMap.enabled = sh; moon.castShadow = sh;
   renderer.shadowMap.type = hi ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   if (moon.shadow.mapSize.x !== size) { moon.shadow.mapSize.set(size, size); if (moon.shadow.map) { moon.shadow.map.dispose(); moon.shadow.map = null; } }
-  { const ls = fx.ultra && !nbTouchDev() ? 1024 : 512; scene.traverse(o => { if (o.isLight && o !== moon && o.castShadow && o.shadow && o.shadow.mapSize.x !== ls && o.shadow.mapSize.x <= 1024) { o.shadow.mapSize.set(ls, ls); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } }); }   // v6.45 Ultra: sharper lamp shadows
+  { const fs = nbTouchDev() ? 2048 : 4096; moonFar.castShadow = sh; if (moonFar.shadow.mapSize.x !== fs) { moonFar.shadow.mapSize.set(fs, fs); if (moonFar.shadow.map) { moonFar.shadow.map.dispose(); moonFar.shadow.map = null; } } moonFar.shadow.needsUpdate = true; }   // v6.73
+  Gfx6.uniforms.nbPcss.value = fx.ultra && !nbTouchDev() ? 1 : 0; if (typeof nbShadowBake === 'function') nbShadowBake();   // v6.73
+  { const ls = hi && !nbTouchDev() ? 1024 : 512; scene.traverse(o => { if (o.isLight && o !== moon && o.castShadow && o.shadow && o.shadow.mapSize.x !== ls && o.shadow.mapSize.x <= 1024) { o.shadow.mapSize.set(ls, ls); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } }); }   // v6.45 Ultra: sharper lamp shadows
   scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
   if (env && env.setQuality) env.setQuality(q); if (dress && dress.setQuality) dress.setQuality(q); if (detail) detail.setQuality(q); if (roomLife) roomLife.setQuality(q); if (trim) trim.setQuality(q); if (street) street.setQuality(q); if (vm.setQuality) vm.setQuality(q); Casings.setQuality(q); Smoke.setQuality(q); WorldFX.setQuality(q); Gfx6.setQuality(q); if (Gfx6.setUltra) Gfx6.setUltra(fx.ultra);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, hi ? hiPixelRatio() : 1) * (window.NBX ? NBX.rscale() : 1)); resize();
@@ -36709,7 +36786,40 @@ const Hounds = (() => {
   return { roll, onRoundStart, spawn, onKill, growl, stock, warm, take, release, isHoundRound, schedule, count, houndHp, dogRound, animate, instance, prepare, get pool() { return pool; } };
 })();
 // ---------- lights ----------
+// v6.73 cached shadow maps. Lamps never move, so their shadow maps render once per map and again after the late dress, a door, the
+// power or a quality change (plus a slow round robin); only the lamp or two nearest you re-render every frame, so the dead throw
+// shadows under them. The far moon cascade is cached the same way. Nothing here adds or removes a light.
+const NBSH = { lamps: [], dyn: new Set(), timers: [], t: 0, rr: 0, far: 0 };
+function nbShadowCollect() {
+  NBSH.lamps.length = 0; NBSH.dyn.clear();
+  scene.traverse(o => { if ((o.isSpotLight || o.isPointLight) && o.userData.shadowOK) { NBSH.lamps.push(o); o.shadow.autoUpdate = false; o.shadow.needsUpdate = true; o.userData.nbReb = 0; } });
+  moonFar.shadow.needsUpdate = true;
+}
+function nbShadowBake(delay) {
+  if (delay) { NBSH.timers.push(setTimeout(() => nbShadowBake(0), delay)); return; }
+  for (const o of NBSH.lamps) o.shadow.needsUpdate = true;
+  moonFar.shadow.needsUpdate = true;
+}
+function nbShadowSchedule() { for (const t of NBSH.timers) clearTimeout(t); NBSH.timers = [1500, 6000, 20000, 45000].map(ms => setTimeout(() => nbShadowBake(0), ms)); }
+const _nbLp = new THREE.Vector3();
+function nbShadowTick(dt) {
+  NBSH.t -= dt; if (NBSH.t > 0 || !NBSH.lamps.length) return; NBSH.t = 0.4;
+  const n = fx.ultra ? 2 : 1, cx = camera.position.x, cz = camera.position.z, near = [];
+  for (const o of NBSH.lamps) {
+    if (o.userData.nbReb && G.time > o.userData.nbReb) { o.userData.nbReb = 0; o.shadow.needsUpdate = true; }
+    if (!o.castShadow || o.intensity <= 0) continue;
+    o.getWorldPosition(_nbLp); const d = (_nbLp.x - cx) * (_nbLp.x - cx) + (_nbLp.z - cz) * (_nbLp.z - cz); if (d < 14 * 14) near.push([d, o]);
+  }
+  near.sort((a, b) => a[0] - b[0]);
+  const keep = new Set(near.slice(0, n).map(a => a[1]));
+  for (const o of NBSH.dyn) if (!keep.has(o)) { o.shadow.autoUpdate = false; o.shadow.needsUpdate = true; o.userData.nbReb = G.time + 2.5; }
+  for (const o of keep) o.shadow.autoUpdate = true;
+  NBSH.dyn = keep;
+  const rr = NBSH.lamps[NBSH.rr++ % NBSH.lamps.length]; if (rr && !keep.has(rr)) rr.shadow.needsUpdate = true;   // round robin: every lamp fresh within a few seconds
+  if (++NBSH.far >= 30) { NBSH.far = 0; moonFar.shadow.needsUpdate = true; }
+}
 function updateLights(dt) {
+  nbShadowTick(dt);
   const ls = G.lightScale == null ? 1 : G.lightScale, lightning = env ? env.lightning || 0 : 0;
   for (const r of roomLights) {
     r.t -= dt;
@@ -36822,7 +36932,7 @@ function fpsWatch(dt) {
   }
 }
 // ---------- main loop ----------
-const fxParams = { time: 0, hurt: 0, flash: 0, grayscale: 0, bloom: 1, exposure: 0.72, lightning: 0 };
+const fxParams = { time: 0, hurt: 0, flash: 0, grayscale: 0, bloom: 1, exposure: 0.72, lightning: 0, moonDir: new THREE.Vector3(-0.5, 0.75, 0.3).normalize() };
 let last = performance.now();
 function tick(dt) {
   if (G.state === 'play' || G.state === 'over') {
@@ -36830,7 +36940,7 @@ function tick(dt) {
     if (G.state === 'play') { updatePlayer(dt); updateRound(dt); updateChain(dt); emit('onTick', dt); try { GasCrawl.tick(dt); } catch (e) { if (!GasCrawl.warned) { GasCrawl.warned = 1; console.warn('gas', e); } } fpsWatch(dt); srTick(dt); try { Loadout.tick(dt); } catch (e) { if (!Loadout.warned) { Loadout.warned = 1; console.warn('classes', e); } } try { Prog.tick(dt); } catch (e) { if (!Prog.warned) { Prog.warned = 1; console.warn('progress', e); } } if ((G.synCT = (G.synCT || 0) + dt) > 0.5) { G.synCT = 0; synCheck(); } zSoakSample(dt); }
     updateZombies(dt); Outpost.update(dt); updateProjectiles(dt); Tac.update(dt); Secrets.update(dt); Build.update(dt); Kino.update(dt); updatePowerups(dt); updateBox(dt); updateAnims(dt); updateParticles(dt); updateFx(dt); updateFires(dt); updateDecals(dt); updateTracers(dt); updatePuffs(dt); updateFlame(dt); Wonder.update(dt); ElemFX.update(dt, { camera, zombies, lights: fireLights, quality: fx.quality, time: G.time, floorAt, fogDensity: scene.fog ? scene.fog.density : 0, maxPoint: EFX_MAXPT, lit: Math.min(1, 0.45 + hemi.intensity * 0.6) }); updatePress(dt); updatePowerKit(dt); try { updateSound(dt); } catch (e) {}
     updateLights(dt); updateHUD(dt); updateListener(); NBX.update(dt);
-    WorldFX.update(dt, G.time, camera, zombies, fx.quality); if (WorldFX.moonDir) WorldFX.followShadow(moon, P.x, P.z, fx.quality, WorldFX.moonDir);
+    WorldFX.update(dt, G.time, camera, zombies, fx.quality); if (WorldFX.moonDir) { WorldFX.followShadow(moon, P.x, P.z, fx.quality, WorldFX.moonDir); fxParams.moonDir.copy(WorldFX.moonDir); }
   } else if (G.state === 'cards') {
     cardsTick(dt);
   } else if (G.state === 'menu') {

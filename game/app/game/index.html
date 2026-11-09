@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.73.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.73.1'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -8896,7 +8896,7 @@ const ZombieModel = (() => {
     if (!model.skinned) return;
     const lowT = tier === true || tier === 'low', far = lowT ? 9 : tier === 'medium' ? 12 : 16;
     const cast = tier === 'high' && dist < 14;   // only the near horde casts real shadows; the contact blobs ground the rest
-    if (model.castT !== cast) { model.castT = cast; for (const m of model.meshes.lod0.concat(model.meshes.lod1)) m.castShadow = cast; }
+    if (model.castT !== cast) { model.castT = cast; for (const m of model.meshes.lod0.concat(model.meshes.lod1)) { m.castShadow = cast; if (!m.userData.nbZ) { m.userData.nbZ = true; m.layers.disable(1); } } }   // v6.73.1 movers stay out of the cached maps
     const want = model.lodLevel ? (dist > far - 1.5 ? 1 : 0) : (dist > far ? 1 : 0);
     if (want === model.lodLevel || !model.meshes.lod1.length) return;
     model.lodLevel = want;
@@ -33839,6 +33839,7 @@ function rollRoundMod(n) {
   return m;
 }
 function startRound(n) {
+  nbShadowBake(1200);   // v6.73.1 what was built between rounds joins the cached shadows
   G.round = n; G.roundHurt = false; G.spawnT = 1.5; G.dropsThisRound = 0; G.survivorUsed = false; G.bossSpawned = false; G.roundStartT = G.time; G.roundKills = 0; G.extraBossDone = false; G.pendingBoss = null; if (run.boss && run.boss.dead) run.boss = null;
   dropStream = subRng('drops', n);
   if (Retreat.due(n)) Retreat.fallBack();   // v6.38 the next position
@@ -36564,7 +36565,7 @@ const Hounds = (() => {
     for (const [n, h, t, p] of BONES) {
       const b = new THREE.Bone(); b.name = n; const ph = p ? gv(BY[p][1]) : new THREE.Vector3(); b.position.copy(gv(h)).sub(ph); (p ? by[p] : holder).add(b); by[n] = b;
       const a = gv(h), c = gv(t), len = a.distanceTo(c), r = /chest/.test(n) ? 0.13 : /hips|spine/.test(n) ? 0.1 : /neck/.test(n) ? 0.07 : /head/.test(n) ? 0.065 : /tail/.test(n) ? 0.03 : /upper/.test(n) ? 0.055 : 0.03;
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.8, r, len, 8), fbMat); m.castShadow = true;
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.8, r, len, 8), fbMat); m.castShadow = true; m.userData.nbZ = true;
       m.position.copy(c).sub(a).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(Y, _v.copy(c).sub(a).normalize()); b.add(m);
     }
     return { holder, by };
@@ -36579,7 +36580,7 @@ const Hounds = (() => {
       const root = P0.rootBone.clone(); holder.add(root); root.traverse(b => { if (b.isBone) by[b.name] = b; });
       const sk = new THREE.Skeleton(P0.names.map(n => by[n]), P0.inv);
       for (const [n] of BONES) if (!by[n]) by[n] = by[n.replace(/\./g, '')];   // GLTFLoader drops the dots from node names
-      const m = new THREE.SkinnedMesh(P0.geo, P0.mat); m.castShadow = true; m.receiveShadow = false; m.frustumCulled = true;
+      const m = new THREE.SkinnedMesh(P0.geo, P0.mat); m.castShadow = true; m.receiveShadow = false; m.frustumCulled = true; m.userData.nbZ = true;
       m.position.copy(P0.mp); m.quaternion.copy(P0.mq); m.scale.copy(P0.ms); holder.add(m); m.bind(sk, P0.bindMatrix);
     } else { const f = fallbackRig(body); holder = f.holder; by = f.by; }
     group.updateMatrixWorld(true);
@@ -36790,13 +36791,21 @@ const Hounds = (() => {
 // power or a quality change (plus a slow round robin); only the lamp or two nearest you re-render every frame, so the dead throw
 // shadows under them. The far moon cascade is cached the same way. Nothing here adds or removes a light.
 const NBSH = { lamps: [], dyn: new Set(), timers: [], t: 0, rr: 0, far: 0 };
+function nbShadowStatic(o) {   // v6.73.1 every mesh that is not a zombie or hound joins layer 1, the layer the cached shadow cameras render
+  if (o.userData && o.userData.nbZ) return;
+  if (o.isMesh || o.isSkinnedMesh) o.layers.enable(1);
+  const c = o.children; for (let i = 0; i < c.length; i++) nbShadowStatic(c[i]);
+}
+function nbShadowCached(o, cached) { o.shadow.camera.layers.set(cached ? 1 : 0); }
 function nbShadowCollect() {
   NBSH.lamps.length = 0; NBSH.dyn.clear();
-  scene.traverse(o => { if ((o.isSpotLight || o.isPointLight) && o.userData.shadowOK) { NBSH.lamps.push(o); o.shadow.autoUpdate = false; o.shadow.needsUpdate = true; o.userData.nbReb = 0; } });
+  scene.traverse(o => { if ((o.isSpotLight || o.isPointLight) && o.userData.shadowOK) { NBSH.lamps.push(o); o.shadow.autoUpdate = false; o.shadow.needsUpdate = true; o.userData.nbReb = 0; nbShadowCached(o, true); } });
+  nbShadowCached(moonFar, true); nbShadowStatic(scene);
   moonFar.shadow.needsUpdate = true;
 }
 function nbShadowBake(delay) {
   if (delay) { NBSH.timers.push(setTimeout(() => nbShadowBake(0), delay)); return; }
+  nbShadowStatic(scene);
   for (const o of NBSH.lamps) o.shadow.needsUpdate = true;
   moonFar.shadow.needsUpdate = true;
 }
@@ -36804,7 +36813,7 @@ function nbShadowSchedule() { for (const t of NBSH.timers) clearTimeout(t); NBSH
 const _nbLp = new THREE.Vector3();
 function nbShadowTick(dt) {
   NBSH.t -= dt; if (NBSH.t > 0 || !NBSH.lamps.length) return; NBSH.t = 0.4;
-  const n = fx.ultra ? 2 : 1, cx = camera.position.x, cz = camera.position.z, near = [];
+  const n = fx.ultra ? 3 : nbTouchDev() ? 1 : 2, cx = camera.position.x, cz = camera.position.z, near = [];   // v6.73.1 live lamps
   for (const o of NBSH.lamps) {
     if (o.userData.nbReb && G.time > o.userData.nbReb) { o.userData.nbReb = 0; o.shadow.needsUpdate = true; }
     if (!o.castShadow || o.intensity <= 0) continue;
@@ -36812,8 +36821,8 @@ function nbShadowTick(dt) {
   }
   near.sort((a, b) => a[0] - b[0]);
   const keep = new Set(near.slice(0, n).map(a => a[1]));
-  for (const o of NBSH.dyn) if (!keep.has(o)) { o.shadow.autoUpdate = false; o.shadow.needsUpdate = true; o.userData.nbReb = G.time + 2.5; }
-  for (const o of keep) o.shadow.autoUpdate = true;
+  for (const o of NBSH.dyn) if (!keep.has(o)) { o.shadow.autoUpdate = false; nbShadowCached(o, true); o.shadow.needsUpdate = true; o.userData.nbReb = G.time + 2.5; }
+  for (const o of keep) { if (!NBSH.dyn.has(o)) nbShadowCached(o, false); o.shadow.autoUpdate = true; }
   NBSH.dyn = keep;
   const rr = NBSH.lamps[NBSH.rr++ % NBSH.lamps.length]; if (rr && !keep.has(rr)) rr.shadow.needsUpdate = true;   // round robin: every lamp fresh within a few seconds
   if (++NBSH.far >= 30) { NBSH.far = 0; moonFar.shadow.needsUpdate = true; }

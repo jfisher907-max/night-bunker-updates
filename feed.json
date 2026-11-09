@@ -1,7 +1,7 @@
 {
- "version": "6.71.0",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/9a9dedac1f20b85360ef1f5bd98ad2d4c5fbb108/game/",
- "notes": "Night Bunker 6.71.0",
+ "version": "6.72.0",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/1ed86bf698e68682857be27a1b54c30ab7a77758/game/",
+ "notes": "Night Bunker 6.72.0: The Dornfeld Line",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -1323,6 +1323,10 @@
    17204,
    "9da8bc307a63379f53ac1c6ff6d2a018dc7a0d2269ac645a8c2837b825697090"
   ],
+  "app/game/assets/previews/trench.webp": [
+   18190,
+   "d455393d2df2c95ec14047e13a6b83b4c82ebe8ec67116f4d729420e329c3309"
+  ],
   "app/game/assets/props_awning_color.webp": [
    13520,
    "4b6cb735cb814b46b30a898a9109ccbe4b1700ab98b62c8fd4797ee3478fc0e3"
@@ -1983,13 +1987,21 @@
    552288,
    "978fea24ecb2dee2ad5a0ca6fa0b8db0f7ad0568d0d30490adce7ac5cce462d8"
   ],
+  "app/game/assets/trench.js": [
+   41310,
+   "2cba54a932802b9c9ca9b45c271d4670f2e541f4884fc81e102f97f152edfab7"
+  ],
+  "app/game/assets/trenchkit.json": [
+   932386,
+   "31afcb666a6ef6186fa6adad41916f94c74dd162e13681069159337c2f6b85bc"
+  ],
   "app/game/desktop.js": [
    11808,
    "a0eb43f7ea3ebff432b8e327c6489d73ab5930d933842aab5fb440e6942d2b2f"
   ],
   "app/game/index.html": [
-   3314534,
-   "12bb0aa8a2437b80ae873092499939536953e436c956145045d3243f9159c3aa"
+   3317710,
+   "e3759bd9c80962f22c0d7232400a0f5d9b82b45aeae8f0a434439c24f4200016"
   ],
   "app/game/vendor/fonts.css": [
    314,
@@ -2013,7 +2025,7 @@
   ],
   "package.json": [
    2194,
-   "21686359516bac88ecac8750261be063a5814c3419fa0d5edaeb0897d6d210ed"
+   "0896bd79ba2a180632e56dc2ccdca8390d98c58447e4f041504944c2c8a26318"
   ],
   "src/main.js": [
    8483,

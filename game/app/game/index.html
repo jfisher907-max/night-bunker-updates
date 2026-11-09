@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.71.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.72.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -5926,6 +5926,7 @@ const Gfx6 = (() => {
     asylum:  { desat: 0.2,  contrast: 1.22, bright: 0.01,  light: [0.88, 1.0, 0.99], dark: [1.0, 0.9, 0.76] },      // v6.30.5: Verruckt (light .855 .99 .98, dark .67 .6 .5)
     marsh:   { desat: 0.25, contrast: 1.25, bright: 0.01,  light: [1.0, 0.9, 0.88],  dark: [0.99, 1.0, 0.96] },      // v6.30.5: Shi No Numa (light .8 .71 .7, dark .73 .74 .71)
     moon:    { desat: 0.45, contrast: 1.24,  bright: 0.0,   light: [0.97, 1.03, 1.0], dark: [0.84, 0.9, 1.08] },      // v6.30.5: BO1 Moon (saturation .33, cold temp)
+    trench:  { desat: 0.24, contrast: 1.22, bright: 0.012, light: [1.0, 1.0, 1.05],  dark: [0.8, 0.9, 1.08] },      // v6.72 the trenches: cold moonlit mud, lantern warmth
     foundry: { desat: 0.1,  contrast: 1.28, bright: 0.02,  light: [1.04, 0.98, 0.9],  dark: [0.86, 0.98, 0.9] },      // v6.43 the ironworks: Der Riese's green-grey with a warmer furnace light
     kino:    { desat: 0.28, contrast: 1.1,  bright: 0.045, light: [1.04, 1.0, 0.92], dark: [0.9, 0.95, 1.02] },      // v6.30.5: Kino (saturation .67-.75, dark .88 .95 1.01)
     field:   { desat: 0.2,  contrast: 1.1,  bright: 0.06, light: [1.03, 1.01, 0.96], dark: [0.9, 0.96, 1.08] },      // v6.49.3 Overrun: a moonlit field you can read to the far edge
@@ -9452,7 +9453,7 @@ vec4 vatAt(sampler2D t, float row) { return texture2D(t, vec2((vid + 0.5) / vatS
 const NBAssets = (() => {
   'use strict';
   const BASE = 'assets/';
-  const LIST = ['zombies', 'hound', 'props', 'kit', 'arch', 'kitperk', 'box', 'arms', 'ammo', 'kar98k', 'carbine', 'thompson', 'trench', 'mp40', 'garand', 'stg44', 'g43', 'ppsh', 'bar', 'mg42', 'dbl', 'pistol', 'panzer', 'ether', 'kino', 'life', 'sets', 'edge', 'traps'];
+  const LIST = ['zombies', 'hound', 'props', 'kit', 'arch', 'kitperk', 'box', 'arms', 'ammo', 'kar98k', 'carbine', 'thompson', 'trench', 'mp40', 'garand', 'stg44', 'g43', 'ppsh', 'bar', 'mg42', 'dbl', 'pistol', 'panzer', 'ether', 'kino', 'life', 'sets', 'edge', 'traps', 'trenchkit'];
   const LATE = ['m1919', 'type100', 'fg42', 'ptrs', 'sawn', 'm2flame', 'gale', 'wonder_coil', 'wonder_bellows', 'wonder_lode', 'm3', 'reising', 'm1903', 'm1903a4', 'm1c', 'm2carbine', 't3carbine', 'johnlmg', 'm1917', 'win1912', 'ithaca', 'auto5', 'bazooka', 'magnum', 'johnson', 'garandgl', 'kar98ks', 'arisaka', 'type99', 'mp5k', 'ak74u', 'mpl', 'pm63', 'spectre', 'm14', 'm16', 'famas', 'galil', 'commando', 'aug', 'g11', 'fnfal', 'olympia', 'spas12', 'hs10', 'rpk', 'hk21', 'dragunov', 'l96a1', 'law', 'chinalake', 'crossbow', 'ballistic'].filter(k => !window.NB_GUN_CUT.has(k));   // batch 1 guns: loaded after boot, or on demand (want); v6.51 cut guns skipped
 // v6.33.2 iPhone memory. Every model texture arrived at full size (182 at 1024 px, six at 2048 px), about 850 MB of GPU
 // texture memory on Low, and an iPhone's browser tab is killed well before that ("Can't open this page"). On iOS phones
@@ -9571,7 +9572,7 @@ const PropKit = (() => {
     lib = {};
     // v6.5: every Blender pack shares one library (props, the machine kit, the building kit)
     const byName = {};   // v6.15: kitperk ships only its own enamels; every other material is kit's, matched by name
-    for (const pk of ['props', 'kit', 'arch', 'kitperk', 'life', 'sets', 'edge']) { const B = NBAssets.get(pk); if (!B) continue; B.scene.updateMatrixWorld(true);
+    for (const pk of ['props', 'kit', 'arch', 'kitperk', 'life', 'sets', 'edge', 'trenchkit']) { const B = NBAssets.get(pk); if (!B) continue; B.scene.updateMatrixWorld(true);
     for (const n of B.scene.children) {
       if (!/^P_/.test(n.name)) continue;
       const key = n.name.slice(2), L = [], bb = new THREE.Box3();
@@ -9931,7 +9932,8 @@ const MapDetail = (() => {
   DECK.kino = [['chair_tip', 3, 0, 1], ['debris_a', 3, 0, 1], ['debris_b', 3, 0, 1], ['crate_s', 2, 0, 1], ['cabinet', 2, 1, 2], ['bucket', 1, 0, 1], ['planks_lean', 2, 0, 1], ['sacks', 1, 1, 2], ['poster', 2, 0, 1]];
   WALLMOUNT.kino = ['poster', 'radiator', 'fusebox', 'poster'];
   DECK.foundry = DECK.works; WALLMOUNT.foundry = ['fusebox', 'radiator', 'fusebox'];   // v6.43
-  const DENSITY = { foundry: 0.5, kino: 0.45, moon: 0.3, marsh: 0.3, asylum: 0.5, bunker: 0.75, village: 0.45, farm: 0.3, rail: 0.45, works: 0.6 };   // share of free wall faces that get a prop
+  DECK.trench = DECK.works; WALLMOUNT.trench = [];   // v6.72 nothing hangs on a parapet
+  const DENSITY = { trench: 0.22, foundry: 0.5, kino: 0.45, moon: 0.3, marsh: 0.3, asylum: 0.5, bunker: 0.75, village: 0.45, farm: 0.3, rail: 0.45, works: 0.6 };   // share of free wall faces that get a prop
   const SMALL = new Set(['bucket', 'chair_tip', 'poster', 'planks_lean', 'cartwheel', 'debris_b']);   // hidden on Low
 
   function build(group, ctx) {
@@ -10073,7 +10075,7 @@ const MapDetail = (() => {
     const finishOf = z => { if (!zoneFinish.has(z)) zoneFinish.set(z, z === 0 ? 1 : RI4()); return zoneFinish.get(z); };
     const RI4 = () => { const r = rng(); return r < 0.25 ? 0 : r < 0.55 ? 1 : r < 0.8 ? 2 : 3; };
     const wbCell = new Set(); for (const w of map.wallbuys || []) for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) if (w.x + dx >= 0 && w.z + dz >= 0 && w.x + dx < GW && w.z + dz < GH) wbCell.add(K(w.x + dx, w.z + dz));   /* v6.35 frames keep off the whole chalk outline */ for (const p of map.perks || []) wbCell.add(K(p.x, p.z));
-    if (style === 'bunker' || style === 'works') {
+    if ((style === 'bunker' || style === 'works') && map.theme !== 'trench') {   // v6.72 the trenches have no wall that high
       const indoor = f => style === 'bunker' || (map.openZones ? f.zone >= 0 && !map.openZones.includes(f.zone) : f.zone > 0);
       for (const run of runs) {
         const f0 = run[0]; if (!indoor(f0) || (map.noTrim && map.noTrim.includes(f0.zone))) continue;
@@ -10108,7 +10110,7 @@ const MapDetail = (() => {
       }
     }
     // v6.30.10: facade kit on the open-air sides of the works halls and the plan maps' courtyards (Asylum, Kino; not Marsh/Moon)
-    if (style === 'works' && map.theme !== 'marsh' && map.theme !== 'moon' && HAS('wh_pilaster')) {
+    if (style === 'works' && map.theme !== 'marsh' && map.theme !== 'moon' && map.theme !== 'trench' && HAS('wh_pilaster')) {
       const indoorF = f => map.openZones ? f.zone >= 0 && !map.openZones.includes(f.zone) : f.zone > 0;
       const yTop = map.plan ? 6.9 : 8.4, ind = !map.theme || map.theme === 'foundry';   // ind: Kesselwerk gets the industrial set (vents), the plan maps the civic one (lamps)
       let nR = 0;
@@ -10334,7 +10336,7 @@ const Trim = (() => {
     const own = [], geos = [];
     const none = { root, stats, setQuality() {}, dispose() { if (root.parent) root.parent.remove(root); } };
     // the bunker has MapDetail's own finishes (timber, limewash, green paint dado); the moon base and the marsh are not plastered rooms
-    if (style === 'bunker' || map.theme === 'moon' || map.theme === 'marsh' || !map.grid) return none;
+    if (style === 'bunker' || map.theme === 'moon' || map.theme === 'marsh' || map.theme === 'trench' || !map.grid) return none;
     const civic = !!map.plan && map.theme !== 'foundry';   // v6.43 the foundry's rooms are works rooms
     const sd = typeof ctx.seed === 'number' ? ctx.seed : [...String(ctx.seed)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261);
     const rng = mulberry(((sd | 0) ^ 0x7a1e5) + style.length * 53), R = (a, b) => a + rng() * (b - a), chance = p => rng() < p, pick = a => a[(rng() * a.length) | 0];
@@ -10440,7 +10442,7 @@ const Trim = (() => {
 // Built once per map after the dressing (about a third of a second on a laptop); only the tiers' always-on groups are kept, so
 // nothing invisible on Low can stop a shot.
 const ShotMesh = (() => {
-  const STATIC = /^(openDress|worksDress|kinoDress|foundryDress|hallDress|marshDress|moonDress|environment|mapDetail|roomLife|trim|street|terraces|kinoProps|props|cover)$/;   // v6.39.3 street
+  const STATIC = /^(openDress|worksDress|kinoDress|foundryDress|trenchDress|hallDress|marshDress|moonDress|environment|mapDetail|roomLife|trim|street|terraces|kinoProps|props|cover)$/;   // v6.39.3 street
   const TIERED = /Extra$|High$|_mid$|_hi$|^extra$|^hi$/;   // Medium/High-only clutter: never a bullet stop
   function build(world, ctx) {
     const THREE = ctx.THREE, GW = ctx.GW, GH = ctx.GH, CELL = ctx.CELL, blocks = ctx.blocks, floorOf = ctx.floorOf, T0 = performance.now();
@@ -10663,6 +10665,12 @@ const RoomLife = (() => {
   const G = 'group', RN = 'run', BY = 'bay';
   const ins = (o) => Object.assign({ where: 'in' }, o || {}), outs = (o) => Object.assign({ where: 'out' }, o || {});
   const JOBS = {
+    trench: {   // v6.72 (set pieces do most of it; see SETS)
+      'Support Line': [['cablereel', W, 2, S], ['chair', W, 2, S], ['bottles', W, 1, HI]],
+      'Fire Trench': [['cablereel', W, 2, S], ['bottles', W, 1, HI]],
+      'Sump Street': [['cablereel', W, 1, S]], 'Lantern Alley': [['cablereel', W, 1, S], ['chair', W, 1, S]],
+      'Chapel Walk': [['cablereel', W, 1, S]], 'Chapel Yard': [['bottles', W, 1, HI]],
+    },
     foundry: {   // v6.43
       'Charging Yard': [['aid', G, 1], ['cablereel', F, 2, S], ['churns', W, 3, S], ['suitcases', W, 2, S], ['cargo', G, 1], ['store', G, 1]],
       'Casting Hall': [['tools', H, 4, S], ['cablereel', W, 2, S], ['churns', W, 2, S], ['store', G, 2], ['chair', W, 2, S], ['bottles', W, 2, HI], ['wardrobe', W, 1]],
@@ -10760,6 +10768,8 @@ const RoomLife = (() => {
   // { one: 1 } = not multiplied by the room's area (one command post per room, however big the room).
   const ONE = { one: 1 }, ONEIN = { one: 1, where: 'in' }, ONEOUT = { one: 1, where: 'out' }, CN = 'corner';
   const SETS = {
+    trench: { 'Support Line': [['set_supply', W, 1, ONE], ['set_cmdpost', W, 1, ONE], ['set_aid', W, 1, ONE], ['set_radio', W, 1, ONE]], 'Fire Trench': [['set_firepit', W, 1, ONE]],
+      'Sump Street': [['set_supply', W, 1, ONE]], 'Lantern Alley': [['set_armory', W, 1, ONE]], 'Chapel Walk': [['set_rubble', CN, 1, ONE]], 'Chapel Yard': [['set_rubble', CN, 1, ONE], ['set_candles', W, 1, ONE]] },   // v6.72
     foundry: { 'Charging Yard': [['set_supply', W, 1, ONE], ['set_barricade', CN, 1, ONE]], 'Casting Hall': [['set_bench', W, 1, ONE], ['set_aid', W, 1, ONE], ['set_rubble', CN, 1, ONE]],
       'Pattern Shop': [['set_office', W, 1, ONE], ['set_armory', W, 1, ONE]], 'Furnace House': [['set_radio', W, 1, ONE], ['set_cmdpost', W, 1, ONE]], 'Ore Yard': [['set_supply', W, 1, ONE]] },   // v6.43
     bunker: { 0: [['set_kitchen', W, 1, ONE], ['set_pantry', W, 1, ONE]], 1: [['set_bunks', W, 2, ONE]], 2: [['set_cmdpost', W, 1, ONE], ['set_radio', W, 1, ONE]],
@@ -10801,7 +10811,7 @@ const RoomLife = (() => {
     return out;
   };
   // maps switched on so far (shipped map by map); window.__nbLifeAll turns every map on for tests
-  const LIVE = new Set(['foundry', 'kino', 'farm', 'marsh', 'moon', 'village', 'river', 'rail', 'works', 'asylum', 'bunker', 'retreat']);
+  const LIVE = new Set(['trench', 'foundry', 'kino', 'farm', 'marsh', 'moon', 'village', 'river', 'rail', 'works', 'asylum', 'bunker', 'retreat']);
   const jobsFor = names => { const out = {}; for (const n of names) for (const k in JOBS) if (JOBS[k][n]) { out[n] = JOBS[k][n]; break; } return out; };   // v6.38
   const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
@@ -14324,8 +14334,8 @@ const Environment = (() => {
       const rub = bg(new THREE.BoxGeometry(0.3, 0.2, 0.25, 2, 2, 2)); jitter(rub, 0.04, 5);
       for (const c of craters) for (let i = 0; i < 7; i++) { const a = R(0, TAU), d = c.r * R(0.9, 1.5); const x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d; outdoor.add(rub, M.stone, compose(_m, x, heightAt(x, z) + 0.05, z, R(-0.5, 0.5), R(0, TAU), R(-0.5, 0.5), R(0.4, 1.3), R(0.4, 1), R(0.4, 1.3))); }
     }
-    const outdoorMesh = outdoor.build(true, true); if (outdoorMesh) { track(outdoorMesh.geometry); if (!ctx.space) root.add(outdoorMesh); }
-    const outdoorFarMesh = outdoorFar.build(true, true); if (outdoorFarMesh) { track(outdoorFarMesh.geometry); outdoorFarMesh.visible = quality === 'high'; if (!ctx.space) root.add(outdoorFarMesh); }
+    const outdoorMesh = outdoor.build(true, true); if (outdoorMesh) { track(outdoorMesh.geometry); if (!ctx.space && !ctx.bare) root.add(outdoorMesh); }
+    const outdoorFarMesh = outdoorFar.build(true, true); if (outdoorFarMesh) { track(outdoorFarMesh.geometry); outdoorFarMesh.visible = quality === 'high'; if (!ctx.space && !ctx.bare) root.add(outdoorFarMesh); }
     // ---- grass tufts (instanced crossed planes)
     {
       const n = 150, g1 = new THREE.PlaneGeometry(0.8, 0.55), g2 = g1.clone().rotateY(HPI); g1.translate(0, 0.27, 0); g2.translate(0, 0.27, 0);
@@ -14333,7 +14343,7 @@ const Environment = (() => {
       mg.add(g1, gm, _m.identity()); mg.add(g2, gm, _m.identity()); const tuft = mg.build(false, true); g1.dispose(); g2.dispose();
       const inst = new THREE.InstancedMesh(track(tuft.geometry), gm, n); inst.receiveShadow = true;
       for (let i = 0; i < n; i++) { let x, z, k = 0; do { x = cx + R(-60, 60); z = cz + R(-60, 60); k++; } while (rectDist(x, z, 0) < 2.5 && k < 20); inst.setMatrixAt(i, compose(_m, x, heightAt(x, z) - 0.03, z, R(-0.1, 0.1), R(0, TAU), R(-0.1, 0.1), R(0.7, 1.4), R(0.6, 1.3), R(0.7, 1.4))); }
-      inst.instanceMatrix.needsUpdate = true; inst.frustumCulled = false; if (!ctx.space) root.add(inst);
+      inst.instanceMatrix.needsUpdate = true; inst.frustumCulled = false; if (!ctx.space && !ctx.bare) root.add(inst);
     }
 
     // ================================================================= ROOF
@@ -19848,6 +19858,7 @@ if (typeof module !== 'undefined') module.exports = Rogue;
 
 </script>
 <script src="assets/foundry.js"></script>
+<script src="assets/trench.js"></script>
 <script>
 // ===== 00-core.js =====
 const bootGame = () => {
@@ -20794,6 +20805,7 @@ const MAPS = {
   moon:    { id: 'moon', hordeK: 1.4, code: 'M', plan: 'moon', dress: 'works', gfx: 'moon', hold: 'relay', name: 'Tycho Relay', short: 'MOON', desc: 'A relay station on the moon: the receiving bay opens on a lab, a glass biodome, the control room and the hangar, and three airlocks lead out to the crater fields, where you jump high and the loop runs all the way round. The power is in the lab.' },
   kino:    { id: 'kino', hordeK: 1.4, code: 'L', plan: 'kino', dress: 'works', gfx: 'kino', hold: 'cinema', name: 'Lichtspielhaus', short: 'KINO', desc: 'A bombed picture palace: the foyer opens on two stair halls up to the balcony, the auditorium and its stage, and the dressing rooms and stage door alley behind. The power is on the stage. Link the stage pad at the foyer mainframe and it sends you up to the projection room, where the Ether Press is.' },
   foundry: { id: 'foundry', hordeK: 1.35, code: 'E', plan: 'foundry', dress: 'works', vision: 'works', hold: 'foundry', name: 'Eisenkrone Foundry', short: 'FOUNDRY', desc: 'An ironworks built three storeys tall: the charging yard is ringed by a gallery with a grand stair up the middle, the casting hall has its crane gallery, and the furnace house climbs past the furnace to the charging deck at the top, where the power is. The ore yard trestle climbs to its back door.' },
+  trench:  { id: 'trench', hordeK: 1.45, code: 'D', plan: 'trench', dress: 'works', vision: 'trench', hold: 'line', name: 'Dornfeld Line', short: 'TRENCHES', desc: 'A stretch of the front dug below the field: eight sandbagged fire bays joined by traverses, two communication trenches back to the support line, a roofless chapel in its walled yard between them, and dugouts off every trench. The dead cross the ground above you and drop in over the parapet; the power is in the battalion dugout.' },
   rail:    { id: 'rail',    hordeK: 1.4, code: 'R', name: 'Rail Yard',      short: 'RAIL YARD', desc: 'Long sidings between goods wagons, a water tower and an engine shed.' },
 };
 const MAP_IDS = Object.keys(MAPS);
@@ -21832,7 +21844,7 @@ function buildWorld(seed, style) {
   const B = map.bounds, bw = (B.maxX - B.minX + 1) * CELL, bh = (B.maxZ - B.minZ + 1) * CELL, bcx = (B.minX + B.maxX + 1) * CELL / 2, bcz = (B.minZ + B.maxZ + 1) * CELL / 2;
   if (style !== 'bunker') {
     SMOKE_SPOTS.length = 0;
-    dress = (map.plan ? (map.theme === 'marsh' ? MarshDress : map.theme === 'moon' ? MoonDress : map.theme === 'kino' ? KinoDress : map.theme === 'foundry' ? FoundryDress : HallDress) : style === 'works' ? WorksDress : OpenDress).build(world, { THREE, TexPack, map, GW, GH, CELL, WALL_H, cc, cellCh, rng, quality: fx.quality, floorAt });
+    dress = (map.plan ? (map.theme === 'marsh' ? MarshDress : map.theme === 'moon' ? MoonDress : map.theme === 'kino' ? KinoDress : map.theme === 'foundry' ? FoundryDress : map.theme === 'trench' ? TrenchDress : HallDress) : style === 'works' ? WorksDress : OpenDress).build(world, { THREE, TexPack, map, GW, GH, CELL, WALL_H, cc, cellCh, rng, quality: fx.quality, floorAt });
     railC = dress.rail || null;
     try { Smoke.build(world, SMOKE_SPOTS, fx.quality); } catch (e) { console.warn('smoke', e); }   // v6.30.2
     if (map.terraces && map.terraces.length) try { terraceKit = TerraceKit.build(world, { THREE, TexPack, map, CELL }); } catch (e) { console.warn('terraces', e); }
@@ -21867,7 +21879,7 @@ function buildWorld(seed, style) {
   const propSpots = map.propSpots.map(p => ({ x: cc(p.x), z: cc(p.z) }));
   const lightSpots = map.lightSpots.map(p => ({ x: cc(p.x), z: cc(p.z), wdx: p.wdx, wdz: p.wdz }));
   env = Environment.build(world, {
-    open: style !== 'bunker', style: style === 'retreat' || style === 'overrun' || style === 'arena' ? map.style : map.style === 'works' ? 'rail' : style, space: map.theme === 'moon',
+    open: style !== 'bunker', style: style === 'retreat' || style === 'overrun' || style === 'arena' ? map.style : map.style === 'works' ? 'rail' : style, space: map.theme === 'moon', bare: map.theme === 'trench',
     THREE, TexPack, grid: map.grid, GW, GH, CELL, WALL_H, cc, cellCh,
     bounds: { minX: B.minX * CELL, maxX: (B.maxX + 1) * CELL, minZ: B.minZ * CELL, maxZ: (B.maxZ + 1) * CELL },
     propSpots, lightSpots: map.style === 'works' ? [] : lightSpots, decalSkip: map.style === 'works' ? map.objects.filter(o => o.type === 'tower' || o.type === 'boiler') : null, roofHoles: map.roofHoles.map(h => ({ x: cc(h.x), z: cc(h.z), r: h.r })), quality: fx.quality, rng,
@@ -21917,7 +21929,7 @@ function buildWorld(seed, style) {
     const gst = MAPS[style] && MAPS[style].gfx || (map.style === 'bunker' ? 'bunker' : map.style);
     // roofed: the whole bunker; on Kesselwerk every hall but the yard (zone 0), its tin roof at 8.6 m
     const zRoof = style === 'works' && map.zoneOf ? (x, z) => { const r = map.zoneOf[Math.floor(z / CELL)]; const zn = r ? r[Math.floor(x / CELL)] : -1; return zn > 0; } : null;
-    const gi = Gfx6.build({ scene, grid, GW, GH, CELL, WALL_H: map.plan ? (map.theme === 'foundry' ? 10.5 : 7.0) : style === 'works' ? 8.6 : WALL_H, lights: roomLights, style: gst, vision: (MAPS[style] && MAPS[style].vision) || gst, elev: map.elev, rise: map.rise, rdir: map.rdir,
+    const gi = Gfx6.build({ scene, grid, GW, GH, CELL, WALL_H: map.plan ? (map.theme === 'foundry' ? 10.5 : map.theme === 'trench' ? 2.2 : 7.0) : style === 'works' ? 8.6 : WALL_H, lights: roomLights, style: gst, vision: (MAPS[style] && MAPS[style].vision) || gst, elev: map.elev, rise: map.rise, rdir: map.rdir,
       roofed: map.roofed || zRoof || (style === 'bunker' ? () => true : null), fogDensity: scene.fog.density, quality: fx.quality });
     Gfx6.claim(world); Gfx6.aniso(world, fx.quality, renderer); if (window.__nbGfxLog) console.log('gfx6 bake', JSON.stringify(gi));
   } catch (e) { console.error('Gfx6 build', e); }
@@ -21935,6 +21947,7 @@ function windowMats() { // v4.2: barricade surround to match the wall it sits in
 // v6.19.2 thin walls: the sill is the room-side WIN_SD metres of the cell, planks flush with the wall face, the zombie in the bay behind
 const WIN_SD = 0.45, WIN_SZ = -1.0 + WIN_SD / 2, WIN_BZ = -1.0 + 0.03, WIN_OUT = -0.2;
 function windowKitKey() {   // v6.57 edge pack surround by wall style; null keeps the boxes
+  if (map.trench) return null;   // v6.72 the parapet gaps take no tall surround
   const id = map.id || map.theme || '', st = map.style;   // plan maps carry their name in theme
   const k = st === 'bunker' || id === 'moon' ? 'concrete' : st === 'farm' ? 'bank' : id === 'marsh' ? 'timber' : st === 'village' || id === 'asylum' || id === 'kino' ? 'stone' : 'brick';
   return typeof PropKit !== 'undefined' && PropKit.has('edge_win_' + k) ? 'edge_win_' + k : null;
@@ -21947,10 +21960,10 @@ function buildWindows() {
     const add = (W, H, D, px, py, pz, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), mat); m.position.set(px, py, pz); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
     // v6.15.1 barrier: WaW/BO1 spacing, you at the planks and the zombie tearing them an arm's length away. v6.19.2: the wall at
     // a window is only as thick as the sill, flush with the room; the zombie comes in through the bay in the wall behind it
-    if (EK) { g.add(PropKit.group(EK)); } else {   // v6.57 the designed surround (built with the room at the group's -z, the outside at +z)
+    if (EK) { g.add(PropKit.group(EK)); } else if (map.trench) { add(2, 0.95, WIN_SD, 0, 0.475, WIN_SZ, TexPack.fit(TexPack.material('dirt'), 2, 1)); add(0.1, 1.3, 0.1, -0.78, 1.5, WIN_SZ, M.woodDark); add(0.1, 1.3, 0.1, 0.78, 1.5, WIN_SZ, M.woodDark); } else {   // v6.72 a gap in the parapet is only its sill; v6.57 the designed surround (built with the room at the group's -z, the outside at +z)
     add(2, 0.95, WIN_SD, 0, 0.475, WIN_SZ, WM.low); add(2, 1.0, 2, 0, 2.7, 0, WM.up);
     add(0.25, 1.25, 2, -0.875, 1.575, 0, WM.post); add(0.25, 1.25, 2, 0.875, 1.575, 0, WM.post); }
-    const kitW = PropKit.has('winframe') && PropKit.has('board');   // v6.5 Blender window frame (oak surround, smashed sash) and boards
+    const kitW = PropKit.has('winframe') && PropKit.has('board') && !map.trench;   // v6.72 planks on two stakes at a parapet gap, no sash   // v6.5 Blender window frame (oak surround, smashed sash) and boards
     if (kitW) { const fr = PropKit.group('winframe'); fr.rotation.y = Math.PI; fr.scale.z = (WIN_SD + 0.06) / 2.11; fr.position.z = WIN_SZ; g.add(fr); } else {
     add(1.55, 0.08, WIN_SD + 0.05, 0, 0.96, WIN_SZ, M.woodDark); add(1.55, 0.08, WIN_SD + 0.05, 0, 2.2, WIN_SZ, M.woodDark);
     add(0.08, 1.25, WIN_SD + 0.05, -0.78, 1.575, WIN_SZ, M.woodDark); add(0.08, 1.25, WIN_SD + 0.05, 0.78, 1.575, WIN_SZ, M.woodDark); }
@@ -21964,7 +21977,7 @@ function buildWindows() {
     // the cell blocks only the sill slab (shoot over it) and the two posts; the bay behind the sill is where the zombie stands
     if (fineCell && cellShapes) {
       addShapes(x, z, [sh(0, WIN_SZ, 1.0, WIN_SD / 2, 0.95), sh(-0.875, 0, 0.125, 1.0, 3.2), sh(0.875, 0, 0.125, 1.0, 3.2)], [[x, z]]);
-      if (elevH) { const k = z * GW + x, fi = g.position.y; if (Math.abs(elevH[k] - fi) > 0.02) { elevH[k] = fi; if (elevR) elevR[k] = 0; } }
+      if (elevH && !map.trench) { const k = z * GW + x, fi = g.position.y; if (Math.abs(elevH[k] - fi) > 0.02) { elevH[k] = fi; if (elevR) elevR[k] = 0; } }   // v6.72 the trench's parapet gaps keep the ground's height
     }
     windows.push({ x, z, wx, wz, nx, nz, zone: w.zone, boards: 6, meshes: boards, group: g, tug: 0, gy: floorAt(wx + nx * 2.4, wz + nz * 2.4) - g.position.y,
       out: { x: wx + nx * WIN_OUT, z: wz + nz * WIN_OUT }, in: { x: wx - nx * 1.6, z: wz - nz * 1.6 }, climbBusy: 0, repairT: 0 });
@@ -25263,6 +25276,7 @@ const KinoPlan = (() => {
 })();
 WALLS.kino = ['kar98k', 'g43', 'mp40', 'thompson', 'trench', 'bar', 'dbl'];
 WALLS.foundry = ['kar98k', 'g43', 'mp40', 'thompson', 'trench', 'bar', 'dbl'];
+WALLS.trench = ['kar98k', 'g43', 'mp40', 'thompson', 'trench', 'bar', 'dbl'];
 // ---------------------------------------------------------------- KinoKit: the Blender set pieces (assets/kino.json)
 // Loaded with the boot list (NBAssets 'kino'), so it is in before any run; parsed the way PropKit parses its packs
 // (meshopt-quantized nodes baked to float geometry, uv / 32 + 0.5 decoded, baked AO in the vertex colours). Every key is
@@ -30856,7 +30870,7 @@ function updateZombies(dt) {
       { const ss = (a0, b0, v) => { const t = Math.max(0, Math.min(1, (v - a0) / (b0 - a0))); return t * t * (3 - 2 * t); };   // v6.1: haul up, over, drop
         const kx = ss(0.1, 0.94, k), up = ss(0.1, 0.48, k) * (1 - ss(0.72, 0.9, k));
         z.x = lerp(z.cx0, w.in.x, kx); z.z = lerp(z.cz0, w.in.z, kx); z.y = lerp(z.cy0 || 0, z.cy1 || 0, ss(0.6, 0.9, k)) + up * 0.62; }
-      if (k >= 1) { z.state = 'chase'; z.y = z.fy = z.cy1 || 0; }
+      if (k >= 1) { z.state = 'chase'; z.y = z.fy = z.cy1 || 0; if ((z.cy0 || 0) - (z.cy1 || 0) > 0.9) { z.flinch = Math.max(z.flinch || 0, z.kind === 'walk' ? 0.55 : 0.4); emit3({ x: z.x, y: z.y + 0.08, z: z.z }, 14, 0x3a2e20, 2.2, 0.8, 5); } }   // v6.72 landed from the ground above
     } else if (z.state === 'chase' && (z.flee > 0 || G.disperseT > 0 && pd < DISPERSE_R && (z.flee = G.disperseT * (z.boss ? 0.6 : 1)) > 0)) {
       // Second Wind: climb the flow field away from the player
       const cx = toCell(z.x), cz = toCell(z.z), here = flowC[cz * GW + cx];
@@ -32662,7 +32676,7 @@ async function grecInit(c) {
 // SYN8 (above) renders the library in plain JS, a slice per frame, after the 6.4 library is ready. This part decides what you
 // stand on, how big the room is, what the world around you is doing, and plays it.
 const SND8 = { ready: false, terr: null, mapRef: null, roomT: 0, room: { small: 0, hall: 0, out: 0 }, wetSmall: null, em: [], emT: 0, emSrc: [], horde: null, hordeT: 0, waterK: 0, waterT: 0, zN: 4, zR: 11, tier: 'medium', bedsK: {} };
-const SND8_ONES = { foundry: ['door_far', 'plane', 'shell', 'mg_far'], asylum: ['door_far', 'crow', 'plane', 'bell', 'door_far'], marsh: ['crow', 'mg_far', 'plane', 'crow'], kino: ['door_far', 'plane', 'mg_far', 'shell'], moon: [] };
+const SND8_ONES = { trench: ['shell', 'mg_far', 'shell', 'plane', 'door_far', 'shell'], foundry: ['door_far', 'plane', 'shell', 'mg_far'], asylum: ['door_far', 'crow', 'plane', 'bell', 'door_far'], marsh: ['crow', 'mg_far', 'plane', 'crow'], kino: ['door_far', 'plane', 'mg_far', 'shell'], moon: [] };
 function snd8Tier() {
   const q = (typeof fx !== 'undefined' && fx.quality) || 'medium';
   if (q !== SND8.tier) { SND8.tier = q; SND8.zN = q === 'low' ? 2 : q === 'high' ? 7 : 4; SND8.zR = q === 'low' ? 9 : q === 'high' ? 15 : 12; }
@@ -32718,6 +32732,7 @@ function snd8Surface(x, z, y) {
   const zn = zoneAt(cx, cz), roof = map.roofCell ? map.roofCell[i] === 1 : false;
   if (map.plan) {
     const f = (map.floors || [])[zn];
+    if (map.plan === 'trench') return map.water && map.water[i] && fl < 0.4 ? 'water' : roof ? 'wood' : f === 'flag' ? 'concrete' : f === 'mud' ? 'mud' : 'wood';   // v6.72
     if (map.plan === 'foundry') return stair ? 'grate' : elev > 2 ? (f === 'boards' ? 'wood' : 'grate') : f === 'boards' ? 'wood' : f === 'sand' ? 'dirt' : f === 'yard' || f === 'ore' ? 'gravel' : 'concrete';   // v6.43
     if (map.plan === 'kino') return elev > 0.4 && !stair ? 'wood' : f === 'parquet' ? 'carpet' : f === 'boards' ? 'wood' : f === 'dirt' ? 'dirt' : 'concrete';
     if (map.plan === 'moon') return f === 'regolith' ? (roof ? 'deck' : 'dust') : f === 'grass' ? 'grass' : 'deck';
@@ -32803,6 +32818,7 @@ function snd8Beds(want, dt) {
     want.amb8_marsh = indoor ? 0.06 : 0.13; want.amb_insects = indoor ? 0.02 : 0.05; want.amb_wind = indoor ? 0.01 : 0.04; want.amb_water = 0.02 + 0.12 * SND8.waterK;
   }
   else if (plan === 'moon') { if (indoor) want.amb8_life = 0.13; else want.amb8_suit = 0.05; }
+  else if (plan === 'trench') { want.amb_wind = indoor ? 0.02 : 0.11; want.amb_room = indoor ? 0.06 : 0; want.amb_water = 0.02; }   // v6.72 wind over the parapet
   else if (plan === 'foundry') { want.amb8_asylum = indoor ? 0.1 : 0.04; want.amb_room = indoor ? 0.08 : 0; want.amb_wind = indoor ? 0.012 : 0.06; }   // v6.43 the furnace's low roar
   else if (plan === 'kino') { want.amb8_theatre = indoor ? 0.15 : 0.04; want.amb_wind = indoor ? 0.012 : 0.06; }
   // rain: in the open, or drumming on the roof over you (no rain underground or on the moon)
@@ -35154,7 +35170,7 @@ const Prog = (() => {
     { id: 'iron_man', cat: 'night', t: 'g', name: 'Iron Man', desc: 'Hold until dawn without going down once', test: c => dawned(c) && mode() === 'night' && !RA().downs },
     { id: 'back_up', cat: 'night', t: 'b', name: 'Second Wind', desc: 'Get back on your feet after going down', test: () => inRun() && RA().ups > 0 },
     // Maps
-    ...['bunker', 'village', 'farm', 'rail', 'river', 'works', 'asylum', 'marsh', 'moon', 'kino', 'foundry'].map(k => ({ id: 'map_' + k, cat: 'maps', t: ['river', 'kino', 'foundry', 'moon'].includes(k) ? 's' : 'b',
+    ...['bunker', 'village', 'farm', 'rail', 'river', 'works', 'asylum', 'marsh', 'moon', 'kino', 'foundry', 'trench'].map(k => ({ id: 'map_' + k, cat: 'maps', t: ['river', 'kino', 'foundry', 'moon', 'trench'].includes(k) ? 's' : 'b',
       name: 'Held: ' + MAPS[k].name, desc: `Hold until dawn on ${MAPS[k].name}`, test: c => dawned(c) && run.map === k, retro: () => !!mapSet()[k] })),
     { id: 'grand_tour', cat: 'maps', t: 'g', name: 'Grand Tour', desc: 'Hold until dawn on every map', test: () => MAP_IDS.every(k => mapSet()[k]), prog: () => [MAP_IDS.filter(k => mapSet()[k]).length, MAP_IDS.length], retro: () => MAP_IDS.every(k => mapSet()[k]) },
     { id: 'lights', cat: 'maps', t: 'b', name: 'Lights On', desc: 'Throw the power switch', test: () => inRun() && RA().pOff && G.power },

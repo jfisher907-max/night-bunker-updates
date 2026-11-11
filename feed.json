@@ -1,7 +1,7 @@
 {
- "version": "6.76.0",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/962269339198953255f655f5b5a649438baad33b/game/",
- "notes": "Night Bunker 6.76.0: faster loads",
+ "version": "6.76.0-1",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/a081cca0629820314c20a3bc913b269b30ff7a4e/game/",
+ "notes": "Update button next to the version box; Check for updates always answers.",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -1996,8 +1996,8 @@
    "31afcb666a6ef6186fa6adad41916f94c74dd162e13681069159337c2f6b85bc"
   ],
   "app/game/desktop.js": [
-   12620,
-   "9e5a05331a8886880ef2ba15e07d056182c1322630c348da81422469f48c85b7"
+   14065,
+   "ada44864241b96badcf89ae2bc8baed558044f6fdc85b8cbb8cab0dcf6effefd"
   ],
   "app/game/index.html": [
    3360834,
@@ -2024,8 +2024,8 @@
    "379e1be28f5a89792bfd24b86bd0c84995393df895b6d40d2caddd139a6435d2"
   ],
   "package.json": [
-   2194,
-   "8bd1280a5fbdd03a0f15d64ca59e1b8472684cf3c2af505c5fedbed7a4d95396"
+   2196,
+   "eb25d5efc969b53abcbe6fd2e66e52796523311da60ca87bef458463cf2ecaf2"
   ],
   "src/main.js": [
    8483,
@@ -2036,8 +2036,8 @@
    "195a874a27cf067ca28dab502846806e2bd64683aa82ae0c1bb6d28bb4dca137"
   ],
   "src/updater.js": [
-   19133,
-   "4148cd73d57fbb8594ae56f111be7e78370bc7b104b95a353821d58e4450acaf"
+   21771,
+   "51707a1ff1b15c70a2b5e3bdc6697af16d00d12d9a296d757a308aefcc43a11d"
   ]
  }
 }

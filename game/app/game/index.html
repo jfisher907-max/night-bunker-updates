@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.75.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.76.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -9876,6 +9876,111 @@ window.nbTexShrinkP = tex => {
   // a gun about to be held: load it now, ahead of the queue
   function want(k) { if (!LATE.includes(k) || got[k] || !finished || !loader0) return; late(k); }
   return { load, want, get: k => got[k], has: k => !!got[k], list: LIST, late: LATE, failed, get done() { return done; }, get finished() { return finished; }, get lateFinished() { return lateFinished; }, onProgress: f => subs.push(f), onLate: f => lateSubs.push(f) };
+})();
+</script>
+<script>
+// v6.76 NBPar: shaders compile in parallel, off the main thread, before the frame that needs them.
+// three r128 links a program and at once asks for its uniforms, so every new shader stalls the page until the GPU process has
+// compiled it, one after another (about 65 before the menu shows and 65 more in the match warm-up). NBPar runs the frame once
+// in "issue" mode first: every program the frame needs is created and linked, but any draw whose program is new is skipped
+// (the uniform query that would stall throws, the draw is dropped, the material is marked to retry). The browser compiles the
+// whole batch on its worker threads (KHR_parallel_shader_compile, polled without stalling); the real frame then finds them ready.
+// Shadow maps that were due to bake are re-armed after the issue pass, so a cached lamp shadow never bakes with casters missing.
+// API: NBPar.issue(renderer, fn, roots) -> true when it ran;  NBPar.wait({ progress(f), cap }) -> Promise;  NBPar.hold (bool:
+// the menu loop skips drawing while the boot batch compiles; only ever honoured in the menu);  NBPar.boot(renderer, fn, roots, why, live)
+// issue + hold + texture slices, dropped as soon as live() turns false (a run started).
+window.NBPar = (() => {
+  'use strict';
+  const PEND = { nbPending: true };
+  let R = null, gl = null, ext = null, on = false, gpp = null;
+  const fresh = new Set(), track = new Set(), stats = { issued: 0, skipped: 0, waits: 0, failed: 0, boot: null };
+  function attach(r) {
+    if (R === r) return true;
+    if (!r || !r.getContext) return false;
+    R = r; gl = r.getContext();
+    try { ext = gl.getExtension('KHR_parallel_shader_compile'); } catch (e) { ext = null; }
+    gpp = gl.getProgramParameter.bind(gl);
+    const lp = gl.linkProgram.bind(gl);
+    gl.linkProgram = function (p) { if (on) { fresh.add(p); track.add(p); stats.issued++; } return lp(p); };
+    // 35718 ACTIVE_UNIFORMS, 35721 ACTIVE_ATTRIBUTES: the queries that wait for the link
+    gl.getProgramParameter = function (p, n) { if (on && (n === 35718 || n === 35721) && fresh.has(p)) throw PEND; return gpp(p, n); };
+    const rbd = r.renderBufferDirect;
+    r.renderBufferDirect = function (cam, sc, geo, mat) {
+      if (!on) return rbd.apply(this, arguments);
+      try { return rbd.apply(this, arguments); } catch (e) { if (e !== PEND) throw e; stats.skipped++; if (mat) mat.needsUpdate = true; }
+    };
+    return true;
+  }
+  function shadowFlags(roots) {
+    const out = [];
+    for (const root of roots || []) if (root && root.traverse) root.traverse(o => { if (o.isLight && o.shadow && o.shadow.needsUpdate) out.push(o); });
+    return out;
+  }
+  // run fn (one frame's render) with new programs issued but not waited for
+  function issue(r, fn, roots) {
+    if (!attach(r)) return false;
+    const due = shadowFlags(roots), smU = R.shadowMap.needsUpdate, dbg = R.debug.checkShaderErrors;
+    on = true; R.debug.checkShaderErrors = false;
+    try { fn(); } catch (e) { if (e !== PEND) console.warn('NBPar issue', e); }
+    finally { on = false; R.debug.checkShaderErrors = dbg; fresh.clear(); }
+    for (const o of due) o.shadow.needsUpdate = true;
+    R.shadowMap.needsUpdate = smU || R.shadowMap.needsUpdate;
+    return true;
+  }
+  // programs still compiling (-1: unknown, the browser has no completion query)
+  function pending() {
+    if (!track.size) return 0;
+    if (!ext) return -1;
+    let n = 0;
+    for (const p of track) { let d = true; try { d = !!gpp(p, ext.COMPLETION_STATUS_KHR); } catch (e) {} if (d) { check(p); track.delete(p); } else n++; }
+    return n;
+  }
+  // three skipped its own error check for the issued programs: report a failed link the way it would have
+  function check(p) {
+    try { if (gl.isProgram(p) && gpp(p, gl.LINK_STATUS) === false) { stats.failed++; console.error('THREE.WebGLProgram: shader error (parallel compile)', gl.getProgramInfoLog(p)); } } catch (e) {}
+  }
+  function flushChecks() { for (const p of track) check(p); track.clear(); }
+  const raf = () => new Promise(res => requestAnimationFrame(() => res()));
+  async function wait(o) {
+    o = o || {}; const cap = o.cap || 25000, t0 = performance.now(), total = Math.max(1, track.size); stats.waits++;
+    for (;;) {
+      const n = pending();
+      if (o.progress) try { o.progress(n < 0 ? 1 : 1 - n / total); } catch (e) {}
+      if (n <= 0 || performance.now() - t0 > cap || (o.live && !o.live())) break;
+      await raf();
+    }
+    if (!ext) setTimeout(flushChecks, 0);   // linked by the real frame that follows
+    return performance.now() - t0;
+  }
+  // textures the next frame will draw that are not on the GPU yet (each upload decodes its image: sliced across frames)
+  function texList(roots) {
+    const out = new Set(), add = v => { if (v && v.isTexture && !v.isCubeTexture && !v.isDataTexture3D && !v.isDataTexture2DArray && !v.isVideoTexture) out.add(v); };
+    const walk = o => { const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : []; for (const m of ms) { for (const k in m) add(m[k]); if (m.uniforms) for (const k in m.uniforms) add(m.uniforms[k] && m.uniforms[k].value); } };
+    for (const r of roots || []) if (r && r.traverse) r.traverse(walk);
+    const ok = im => !!im && ((typeof HTMLImageElement !== 'undefined' && im instanceof HTMLImageElement && im.complete && im.naturalWidth > 0) || (typeof HTMLCanvasElement !== 'undefined' && im instanceof HTMLCanvasElement && im.width > 0) || (typeof ImageBitmap !== 'undefined' && im instanceof ImageBitmap));
+    return [...out].filter(t => { if (!(t.version > 0) || !ok(t.image)) return false; const p = R.properties.get(t); return !(p.__webglTexture && p.__version === t.version); });
+  }
+  let holdN = 0;
+  // the menu backdrop: issue its programs, keep the last picture on screen while they compile and its textures upload
+  function boot(r, fn, roots, why, live) {
+    if (navigator.webdriver && !window.__nbPar) return false;   // harnesses keep the old synchronous first frame
+    const t0 = performance.now();
+    if (!issue(r, fn, roots)) return false;
+    holdN++; const my = holdN; api.hold = true;
+    const tex = (() => { try { return texList(roots); } catch (e) { return []; } })();
+    let i = 0, texMs = 0;
+    const pump = async () => {
+      // textures first, 10 ms a frame, while the shaders compile on their own threads
+      while (i < tex.length && (!live || live())) { const f0 = performance.now(); while (i < tex.length && performance.now() - f0 < 10) { try { R.initTexture(tex[i]); } catch (e) {} i++; } texMs += performance.now() - f0; await raf(); }
+      const w = await wait({ cap: 20000, live });
+      if (my === holdN) api.hold = false;
+      stats.boot = { why: why || 'boot', ms: Math.round(performance.now() - t0), tex: tex.length, texMs: Math.round(texMs), wait: Math.round(w), parallel: !!ext, issued: stats.issued };
+    };
+    pump().catch(() => { if (my === holdN) api.hold = false; });
+    return true;
+  }
+  const api = { issue, wait, pending, boot, hold: false, stats, get ext() { return !!ext; } };
+  return api;
 })();
 </script>
 <script>
@@ -28985,7 +29090,7 @@ function weeklyEnd(kind, sc) {   // dawn / hold / dead: best round, first-dawn s
   } catch (e) { console.warn('weekly', e); }
 }
 const lobbyMap = () => meta.modeSel === 'outpost' ? 'arena' : meta.modeSel === 'overrun' ? 'overrun' : meta.modeSel === 'retreat' ? 'retreat' : meta.modeSel === 'weekly' ? weeklyMap() : MAPS[meta.mapSel] ? meta.mapSel : 'bunker';
-function lobbyRebuildNow() { try { rng = MapGen.rng(hashSeed('lobby')); buildWorld(hashSeed('lobby'), lobbyMap()); } catch (e) { console.warn('lobby map', e); } }
+function lobbyRebuildNow() { try { rng = MapGen.rng(hashSeed('lobby')); buildWorld(hashSeed('lobby'), lobbyMap()); } catch (e) { console.warn('lobby map', e); } try { if (G.state === 'menu') NBPar.boot(renderer, renderFrame, [scene, vmScene], 'lobby', () => G.state === 'menu'); } catch (e) {} }
 // v6.38.3 a menu pick paints first (the card or button lights at once) and the backdrop is rebuilt once the mouse, keys and pad
 // have been still for 0.35 s (2 s at most); picks made before it runs fold into one build of the latest choice. A run started in between builds its own world, so the job drops.
 let lobbyQT = 0;
@@ -36196,9 +36301,9 @@ var Loader = (() => {
       const tex = texList();
       for (let i = 0; i < tex.length;) { const f0 = performance.now(); while (i < tex.length && performance.now() - f0 < 10) { try { renderer.initTexture(tex[i]); } catch (e) {} i++; } bar(0.58 + 0.17 * i / tex.length, 80); await raf(); }
       // 4. shaders: the warm-up renders every model, effect and gun once, seen from where the player stands
-      stage('Warming up shaders'); bar(0.97, est.warm * 1.2); await painted();
+      stage('Warming up shaders'); bar(0.76, 120); await painted();
       camera.position.set(P.x, (P.fy || 0) + (P.eyeH || 1.6), P.z); camera.rotation.set(P.pitch || 0, P.yaw || 0, 0); camera.updateMatrixWorld();
-      const w0 = performance.now(); warmShaders(); wT = performance.now() - w0;
+      const w0 = performance.now(); const wp = warmShaders({ progress: f => bar(0.76 + 0.2 * f, 150), cap: 25000 }); if (wp && wp.then) { bar(0.97, est.warm * 0.5); await wp; } wT = performance.now() - w0;
       stage(o.restore ? 'Run restored' : 'Ready'); bar(1, 160);
       times[qk] = { build: Math.round(bT), warm: Math.round(wT), tex: tex.length, at: Date.now() }; T.set(times);
       Loader.last = { build: Math.round(bT), warm: Math.round(wT), tex: tex.length, total: Math.round(performance.now() - t0), map: run.map };
@@ -37156,7 +37261,7 @@ function cloudAhead(ms) { try { if (!vm || !vm.guns || !vm._cloudGen) return; co
   if (!vm._cloudPump(ms || 3) && typeof ZombieModel !== 'undefined' && ZombieModel.gibAhead) ZombieModel.gibAhead(ms || 3); } catch (e) {} }   // v6.44.1 then the gib caches
 let cloudT = 0;
 setInterval(() => { if (performance.now() - (window.nbInputT || 0) < 1200) return; if (G.state === 'cards' || G.state === 'paused' || G.state === 'bench' || G.state === 'menu') cloudAhead(14); }, 120);   // v6.38.3 not under the player's hand
-function warmShaders() {
+function warmShaders(par) {
   if (typeof Loader !== 'undefined' && Loader && Loader.defer) return;   // v6.44 the loading screen runs it as its own stage
   try {
     if (!meta.classic) Crowd.init(scene);   // v5.4: bake the far horde once (its meshes stay in the scene and warm with it)
@@ -37194,6 +37299,7 @@ function warmShaders() {
     scene.add(grp);
     const casingsBack = Casings.warm(grp);
     const g6 = Gfx6.warm(scene, grp);
+    const finish = () => { try {
     renderFrameWith(vmScene);
     g6();
     scene.remove(grp); casingsBack();
@@ -37203,6 +37309,10 @@ function warmShaders() {
     for (const m of zPool) if (m.group.parent === grp) grp.remove(m.group);
     grp.remove(warmBoss.group);
     for (const m of warmSk) ZombieModel.dispose(m);
+    } catch (e) { console.warn('shader warm-up', e); } };
+    // v6.76 parallel compile: the loading screen keeps animating while the batch compiles
+    if (par && window.NBPar && !(navigator.webdriver && !window.__nbPar) && NBPar.issue(renderer, () => renderFrameWith(vmScene), [scene, vmScene])) return NBPar.wait(par).then(finish, finish);
+    finish();
   } catch (e) { console.warn('shader warm-up', e); }
 }
 // ---------- fps watchdog (auto-drop quality) ----------
@@ -37288,7 +37398,7 @@ function frame(now) {
   tick(dt);
   if (G.state !== 'play' && G.state !== 'over') try { snd7Tick(dt); snd8Tick(dt, false); } catch (e) {}   // v6.4: the beds fade out in menus and on pause
   fxParams.time = G.time; fxParams.hurt = G.state === 'over' ? 0.4 : clamp((1 - P.hp / (P.maxHp || 100)) * 1.1 + (P.hurtFlash || 0) * 0.5, 0, 1); fxParams.flash = flashT; fxParams.grayscale = G.state === 'over' ? 1 : P.downT > 0 ? 0.85 : 0; fxParams.lightning = env ? env.lightning || 0 : 0; fxParams.ads = vm.fAds ? vm.fAds.x : 0;
-  if (!noRender) renderFrame();
+  if (!noRender && !(window.NBPar && NBPar.hold && G.state === 'menu')) renderFrame();
   fpsBusy += performance.now() - w0;
 }
 let noRender = false;
@@ -38811,6 +38921,7 @@ recompute();
 renderHorde(); renderMode(); try { renderEra(); } catch (e) {} rng = MapGen.rng(hashSeed('lobby')); buildWorld(hashSeed('lobby'), lobbyMap());
 if (typeof touchUI !== 'undefined' && touchUI) qCeil = 1;   // phones and tablets: Auto tops out at Medium
 setQuality(fx.quality, meta.qAuto !== false);   // v5.3: Auto unless the player picked a tier (fx starts from the saved tier; touch sets Low on a first visit)
+try { NBPar.boot(renderer, renderFrame, [scene, vmScene], 'boot', () => G.state === 'menu'); } catch (e) { console.warn('NBPar boot', e); }   // v6.76
 requestAnimationFrame(frame);
 // ======================= v6.8: RUN SAVE (a new version never costs you the run) =======================
 // Publishing a new version reloads every open copy of the game, and the Windows installer has to close the app. So the run

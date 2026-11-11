@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.76.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.76.1'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -6394,11 +6394,11 @@ float nbDn( vec3 p ) { return nbDv( p ) * 0.65 + nbDv( p * 2.7 + 5.0 ) * 0.35; }
     const fl = name === 'concrete' && typeof TexPack !== 'undefined' ? TexPack.make('concreteFloor') : null;   // concrete floors read a poured-slab sheet, not the wall's form boards
     sh.uniforms.nbFloorOn = { value: fl ? 1 : 0 }; sh.uniforms.nbFloorMap = { value: fl ? fl.map : white }; sh.uniforms.nbFloorNrm = { value: fl ? fl.normalMap : white };
     sh.uniforms.nbPomOn = U.nbPomOn; sh.uniforms.nbPomN = U.nbPomN; sh.uniforms.nbPom = { value: (name && POM[name]) || 0 }; sh.uniforms.nbHgt = (name && POM[name]) ? (HGT[name] || (HGT[name] = { value: white })) : { value: white };   // v6.45
-    const wr = wearOf(name, m); sh.defines = Object.assign(sh.defines || {}, { NB_FLOOR: fl ? 1 : 0, NB_POM: name && POM[name] ? 1 : 0, NB_WEAR: wr[0] ? 1 : 0 });   // v6.74 optional samplers compile away
+    const wr = wearOf(name, m), nbDefs = '#define NB_FLOOR ' + (fl ? 1 : 0) + '\n#define NB_POM ' + (name && POM[name] ? 1 : 0) + '\n#define NB_WEAR ' + (wr[0] ? 1 : 0) + '\n';   // v6.74 optional samplers compile away (v6.76.1: in the text, the material's defines stay as they were)
     sh.uniforms.nbWear = { value: new THREE.Vector4(wr[0], wr[1], wr[2], wr[3]) }; sh.uniforms.nbWearMap = { value: wr[4] || white }; sh.uniforms.nbWearOn = U.nbWearOn;
     sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', TILE_MAP)
       .replace('#include <roughnessmap_fragment>', ROUGH_CH + '\n\troughnessFactor = mix( roughnessFactor, 0.97, nbWearR );').replace('#include <normal_fragment_maps>', NORMAL_CH);
-    sh.fragmentShader = sh.fragmentShader.replace('void main() {', TILE_PARS + DETAIL_PARS + 'void main() {');
+    sh.fragmentShader = sh.fragmentShader.replace('void main() {', nbDefs + TILE_PARS + DETAIL_PARS + 'void main() {');
   }
   const MOONLIT = `
 #include <shadowmap_pars_fragment>
@@ -9965,7 +9965,20 @@ window.NBPar = (() => {
   function boot(r, fn, roots, why, live) {
     if (navigator.webdriver && !window.__nbPar) return false;   // harnesses keep the old synchronous first frame
     const t0 = performance.now();
-    if (!issue(r, fn, roots)) return false;
+    // v6.76.1 the whole map, not just what the camera sees: the menu camera pans, and every object that drifted into view used to
+    // compile its shader on the spot (one stall after another for ~25 s after the menu appeared)
+    // and what the game has hidden for now (distance culls, props that switch on later), as long as no light is inside: a light
+    // switched on, even for one frame, would change the light count every shader is built for
+    const hasLight = o => { let l = false; o.traverse(c => { if (c.isLight) l = true; }); return l; };
+    const all = () => {
+      const back = [], shown = [];
+      for (const r0 of roots || []) if (r0 && r0.traverse) r0.traverse(o => {
+        if (o !== r0 && !o.visible && !o.isLight && !o.isCamera && !hasLight(o)) { shown.push(o); o.visible = true; }
+        if ((o.isMesh || o.isSprite || o.isPoints || o.isLine) && o.frustumCulled) { back.push(o); o.frustumCulled = false; }
+      });
+      try { fn(); } finally { for (const o of back) o.frustumCulled = true; for (const o of shown) o.visible = false; }
+    };
+    if (!issue(r, all, roots)) return false;
     holdN++; const my = holdN; api.hold = true;
     const tex = (() => { try { return texList(roots); } catch (e) { return []; } })();
     let i = 0, texMs = 0;

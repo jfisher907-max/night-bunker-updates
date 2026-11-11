@@ -16,6 +16,16 @@
 #deskOv .seg button:disabled{opacity:.35;cursor:default}
 #deskOv .restart{border:1px dashed var(--brass);padding:10px 12px;margin-bottom:16px;font-size:14px;color:var(--brass);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 #deskFps{position:fixed;right:10px;bottom:8px;z-index:9;font:12px var(--ui);color:var(--toxic);text-shadow:0 1px 0 #000;pointer-events:none;letter-spacing:.06em}
+#deskVerWrap{float:right;display:inline-flex;align-items:stretch;margin-top:4px}
+#deskVerWrap .verTop{float:none;margin:0}
+#deskUpdBtn{font:12px var(--ui);letter-spacing:.1em;color:var(--paper-dim);background:transparent;border:1px solid var(--paper-dim);border-right:0;padding:2px 10px;cursor:pointer;opacity:.85;white-space:nowrap}
+#deskUpdBtn:hover:not(:disabled),#deskUpdBtn:focus-visible{opacity:1;color:var(--paper)}
+#deskUpdBtn:disabled{cursor:default}
+#deskUpdBtn.hot{color:#120303;background:var(--brass);border-color:var(--brass);opacity:1;font-weight:bold;animation:nbpulse 1.6s ease-in-out infinite}
+#deskUpdBtn.busy{color:var(--brass);border-color:var(--brass);opacity:1}
+#deskUpdBtn.ok{color:var(--toxic);border-color:var(--toxic);opacity:1}
+#deskUpdBtn.err{color:#e0a080;border-color:#a05040;opacity:1}
+@keyframes nbpulse{50%{box-shadow:0 0 12px var(--brass)}}
 #deskUpd{border:1px dashed var(--brass);background:rgba(10,8,6,.82);padding:10px 14px;margin:0 0 14px;font:15px var(--ui);color:var(--brass);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 #deskUpd .btn{font-size:17px;padding:6px 18px}
 #deskUpd.err{color:#e0a080;border-color:#a05040}
@@ -45,7 +55,7 @@
       <label>FPS COUNTER</label><div class="seg" id="dFps"><button data-v="on">Show</button><button data-v="off">Hide</button></div>
     </div>
     <div class="restart" id="dRestart" hidden><span>Some changes apply after a restart. Your Depot progress is saved.</span><button class="btn ghost" id="dRestartBtn">Restart now</button></div>
-    <div class="row"><button class="btn" id="dBack">Done</button><button class="btn ghost" id="dQuit">Quit to desktop</button><button class="btn ghost" id="dCheck">Check for updates</button><span class="note" style="margin:0" id="dVer"></span></div>
+    <div class="row"><button class="btn" id="dBack">Done</button><button class="btn ghost" id="dQuit">Quit to desktop</button><span class="note" style="margin:0" id="dVer"></span></div>
     <div class="note" id="dUpd" style="margin:10px 0 0;font-size:13px"></div>
   </div>`;
   document.body.appendChild(ov);
@@ -103,23 +113,28 @@
     if (t - t0 >= 500) { if (!fps.hidden) fps.textContent = Math.round(frames * 1000 / (t - t0)) + ' FPS'; frames = 0; t0 = t; }
     requestAnimationFrame(tick);
   })(t0);
-  // ---------- updates (shell 2): a banner on the title screen only, never mid-run ----------
+  // ---------- updates: a button joined to the version box on the main menu (never mid-run) ----------
   if (D.updateStatus) {
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const bar = document.createElement('div'); bar.id = 'deskUpd'; bar.hidden = true;
     const card = document.createElement('div'); card.id = 'deskUpdOv'; card.hidden = true; document.body.appendChild(card);
-    const pb = $('playBar');
-    if (pb && pb.parentElement) pb.parentElement.insertBefore(bar, pb);
-    let us = D.updateStatus(), shownOk = false, checking = false;
+    // [ Update to v6.77.0 ][ v6.76.0 · Windows ]: the button sits flush against the version tag
+    const ver = document.querySelector('.verTop'), wrap = document.createElement('span'), ub = document.createElement('button');
+    wrap.id = 'deskVerWrap'; ub.id = 'deskUpdBtn'; ub.type = 'button';
+    if (ver && ver.parentElement) { ver.parentElement.insertBefore(wrap, ver); wrap.appendChild(ub); wrap.appendChild(ver); }
+    let us = D.updateStatus(), shownOk = false, checking = false, flash = '', flashT = 0;
+    const say = (t, ms = 6000) => { flash = t; clearTimeout(flashT); flashT = setTimeout(() => { flash = ''; renderUpd(); }, ms); };
     function renderUpd() {
-      const u = us; let html = '', err = false;
-      if (u.updated && !shownOk) html = '';
-      else if (u.state === 'ready') html = `<span>Update v${esc(u.version)} is ready${u.from === 'downloads' ? ' (found in your Downloads)' : ''}. The game restarts by itself, takes a few seconds.</span><button class="btn" data-a="apply">Update now</button>`;
-      else if (u.state === 'downloading') html = `<span>Downloading update v${esc(u.version)}…</span><span class="bar"><i style="width:${Math.round((u.progress || 0) * 100)}%"></i></span>`;
-      else if (u.state === 'applying') html = '<span>Updating, the game will reopen in a moment…</span>';
-      else if (u.state === 'installer') { err = true; html = `<span>${esc(u.message)}</span>`; }
-      else if (u.state === 'error' && u.message) { err = true; html = `<span>Update problem: ${esc(u.message)}</span><button class="btn ghost" data-a="dismiss">OK</button>`; }
-      bar.classList.toggle('err', err); bar.innerHTML = html; bar.hidden = !html;
+      const u = us;
+      // the version-box button
+      let label = 'Check for updates', cls = '', dis = false, tip = 'Look for a new version now';
+      if (u.state === 'off') { label = 'Updates off'; dis = true; tip = 'Updates are off in this copy'; }
+      else if (u.state === 'applying') { label = 'Installing…'; dis = true; cls = 'hot'; }
+      else if (u.state === 'ready') { label = `Install update v${u.version}`; cls = 'hot'; tip = 'Install now: the game closes and reopens in a few seconds. Saves and runs are kept.'; }
+      else if (u.state === 'downloading') { label = `Downloading v${u.version} · ${Math.round((u.progress || 0) * 100)}%`; dis = true; cls = 'busy'; }
+      else if (u.state === 'installer') { label = 'Update needs reinstall'; cls = 'err'; tip = u.message || ''; }
+      else if (checking || u.state === 'checking') { label = 'Checking…'; dis = true; }
+      else if (flash) { label = flash; cls = /reach|failed|error/i.test(flash) ? 'err' : 'ok'; tip = u.lastError || ''; }
+      ub.textContent = label; ub.className = cls; ub.disabled = dis; ub.title = tip;
       // full-screen cards: while the update installs, and once after the game reopens
       let c = '', cerr = false;
       if (u.state === 'applying') c = `<div class="spin"></div><h2>Installing update v${esc(u.version || '')}</h2><p>Night Bunker will close and reopen by itself in a few seconds. Please don't start it again in the meantime.</p>`;
@@ -128,24 +143,34 @@
       card.classList.toggle('err', cerr); card.innerHTML = c ? `<div class="card">${c}</div>` : ''; card.hidden = !c;
       if (c && card.querySelector('button')) card.querySelector('button').focus();
       if (c && u.updated && u.updated.ok && !shownOk && !card._t) card._t = setTimeout(() => { if (!shownOk) { shownOk = true; renderUpd(); } }, 12000);
-      $('dCheck').textContent = checking ? 'Checking…' : 'Check for updates';
+      // status line in the Display panel
       const when = u.lastCheck ? new Date(u.lastCheck).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
       $('dUpd').textContent = checking ? 'Checking for updates…'
         : u.state === 'off' ? 'Updates: off in this copy.'
-        : u.lastError ? `Updates: couldn't reach the update server at ${when} (${u.lastError}). You're on v${u.current}.`
-        : u.state === 'ready' ? `Updates: v${u.version} is ready. Use Update now on the title screen.`
+        : u.state === 'ready' ? `Updates: v${u.version} is ready. Press "Install update v${u.version}" next to the version box on the main menu.`
         : u.state === 'downloading' ? `Updates: downloading v${u.version}… ${Math.round((u.progress || 0) * 100)}%`
+        : u.lastError ? `Updates: couldn't reach the update server at ${when} (${u.lastError}). You're on v${u.current}.`
         : u.lastCheck ? `Updates: up to date. You're on v${u.current}${u.latest ? ', the newest is v' + u.latest : ''} (checked ${when}).`
         : 'Updates: checking shortly after launch.';
     }
+    function manualCheck() {
+      if (checking) return;
+      checking = true; renderUpd();
+      D.checkUpdate().then(s => {
+        checking = false; us = s;
+        if (s.state === 'ready' || s.state === 'downloading') say('', 1);
+        else if (s.lastError) say("Can't reach update server", 9000);
+        else say(`Up to date ✓`);
+        renderUpd();
+      }, e => { checking = false; say('Check failed', 9000); renderUpd(); });
+    }
+    ub.addEventListener('click', () => {
+      if (us.state === 'ready') { us = { ...us, state: 'applying' }; renderUpd(); D.applyUpdate(); }
+      else if (us.state === 'installer') alert(us.message);
+      else manualCheck();
+    });
     card.addEventListener('click', e => { if (e.target.dataset && e.target.dataset.a === 'dismiss') { shownOk = true; if (us.state === 'error') us = { ...us, state: 'none', message: '' }; renderUpd(); } });
     window.addEventListener('keydown', e => { if (!card.hidden) { e.stopImmediatePropagation(); if ((e.key === 'Enter' || e.key === 'Escape') && card.querySelector('button')) { e.preventDefault(); card.querySelector('button').click(); } } }, true);
-    bar.addEventListener('click', e => {
-      const a = e.target.dataset && e.target.dataset.a;
-      if (a === 'apply') { us = { ...us, state: 'applying' }; renderUpd(); D.applyUpdate(); }
-      if (a === 'dismiss') { shownOk = true; if (us.state === 'error') us = { ...us, state: 'none', message: '' }; renderUpd(); }
-    });
-    $('dCheck').addEventListener('click', () => { if (checking) return; checking = true; renderUpd(); D.checkUpdate().then(s => { checking = false; us = s; renderUpd(); }, () => { checking = false; renderUpd(); }); });
     D.onUpdate(s => { us = s; renderUpd(); });
     renderUpd();
   }

@@ -130,27 +130,61 @@ async function checkDownloads() {
   return best.v.version;
 }
 
-function fetchBuf(url, onProgress) {
+// Two network paths: Electron's net (Chromium stack, system proxy) and Node's https (direct). Each attempt has a connect
+// timeout and an idle timeout, so a stalled request can never leave the updater stuck "checking".
+function netGet(url, onProgress, idleMs) {
   return new Promise((resolve, reject) => {
+    let timer, done = false;
+    const fail = e => { if (done) return; done = true; clearTimeout(timer); try { req.abort(); } catch (x) {} reject(e); };
+    const idle = () => { clearTimeout(timer); timer = setTimeout(() => fail(new Error('timed out')), idleMs); };
     const req = net.request({ url, redirect: 'follow', cache: 'no-cache' });
     req.setHeader('User-Agent', 'NightBunker-Updater');
     req.on('response', res => {
-      if (res.statusCode !== 200) { reject(new Error('HTTP ' + res.statusCode)); res.on('data', () => {}); return; }
+      if (res.statusCode !== 200) { res.on('data', () => {}); fail(new Error('HTTP ' + res.statusCode)); return; }
+      const total = +[].concat(res.headers['content-length'] || 0)[0] || 0, parts = []; let got = 0;
+      idle();
+      res.on('data', d => { idle(); parts.push(d); got += d.length; if (onProgress && total) onProgress(got / total); });
+      res.on('end', () => { if (done) return; done = true; clearTimeout(timer); resolve(Buffer.concat(parts)); });
+      res.on('error', fail);
+    });
+    req.on('error', fail);
+    idle(); req.end();
+  });
+}
+function httpsGet(url, onProgress, idleMs, hops = 0) {
+  return new Promise((resolve, reject) => {
+    const req = require('https').get(url, { headers: { 'User-Agent': 'NightBunker-Updater' } }, res => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && hops < 5) { res.resume(); resolve(httpsGet(new URL(res.headers.location, url).href, onProgress, idleMs, hops + 1)); return; }
+      if (res.statusCode !== 200) { res.resume(); reject(new Error('HTTP ' + res.statusCode)); return; }
       const total = +res.headers['content-length'] || 0, parts = []; let got = 0;
       res.on('data', d => { parts.push(d); got += d.length; if (onProgress && total) onProgress(got / total); });
       res.on('end', () => resolve(Buffer.concat(parts)));
       res.on('error', reject);
     });
+    req.setTimeout(idleMs, () => req.destroy(new Error('timed out')));
     req.on('error', reject);
-    setTimeout(() => { try { req.abort(); } catch (e) {} reject(new Error('timed out')); }, 15 * 60 * 1000);
-    req.end();
   });
+}
+// jsDelivr mirrors the same GitHub files, for networks where raw.githubusercontent.com is blocked or slow.
+function mirrorOf(url) {
+  const m = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.*)$/.exec(url.split('?')[0]);
+  return m ? `https://cdn.jsdelivr.net/gh/${m[1]}/${m[2]}@${m[3]}/${m[4]}` : null;
+}
+async function fetchBuf(url, onProgress, idleMs = 30000) {
+  const tries = [[netGet, url], [httpsGet, url]], mirror = mirrorOf(url);
+  if (mirror) tries.push([netGet, mirror], [httpsGet, mirror]);
+  const errs = [];
+  for (const [fn, u] of tries) {
+    try { return await fn(u, onProgress, idleMs); }
+    catch (e) { errs.push((u === url ? '' : 'mirror ') + (fn === netGet ? 'net' : 'https') + ': ' + e.message); note('fetch failed ' + u + ' (' + errs[errs.length - 1] + ')'); if (/^HTTP 404/.test(e.message) && u === url && !mirror) break; }
+  }
+  throw new Error(errs[0] + (errs.length > 1 ? ' (+' + (errs.length - 1) + ' more tries)' : ''));
 }
 
 async function checkFeed() {
   const feed = process.env.NB_UPDATE_FEED || pkg.nbUpdateFeed;
   if (!feed) return null;
-  const info = JSON.parse((await fetchBuf(feed + (feed.includes('?') ? '&' : '?') + 't=' + Date.now())).toString('utf8'));
+  const info = JSON.parse((await fetchBuf(feed + (feed.includes('?') ? '&' : '?') + 't=' + Date.now(), null, 20000)).toString('utf8'));
   set({ latest: info.version || null });
   if (!info.version || !(info.url || info.files) || !newer(info.version, status.current)) return null;
   const s = stagedVersion();
@@ -211,10 +245,13 @@ async function checkDelta(info) {
   return info.version;
 }
 
-let busy = false;
-async function check() {
-  if (busy || status.state === 'applying') return status;
-  busy = true;
+let busy = null;
+function check() {
+  if (status.state === 'applying') return Promise.resolve(status);
+  if (!busy) busy = runCheck().finally(() => { busy = null; });
+  return busy;
+}
+async function runCheck() {
   const prev = status.state;
   if (prev !== 'ready' && prev !== 'installer') set({ state: 'checking', message: '' });
   try {
@@ -224,7 +261,7 @@ async function check() {
     if (!v || status.state !== 'ready') { try { const f = await checkFeed(); if (f) v = f; } catch (e) { feedErr = e.message; note('online check failed: ' + e.message); if (status.state === 'downloading') set({ state: 'none', version: null, progress: 0 }); } }
     if (!v && (status.state === 'checking')) set({ state: 'none' });
     set({ lastCheck: new Date().toISOString(), lastError: feedErr });
-  } finally { busy = false; }
+  } catch (e) { note('check failed: ' + e.message); set({ lastCheck: new Date().toISOString(), lastError: e.message }); if (status.state === 'checking') set({ state: 'none' }); }
   return status;
 }
 

@@ -151,6 +151,7 @@ async function checkFeed() {
   const feed = process.env.NB_UPDATE_FEED || pkg.nbUpdateFeed;
   if (!feed) return null;
   const info = JSON.parse((await fetchBuf(feed + (feed.includes('?') ? '&' : '?') + 't=' + Date.now())).toString('utf8'));
+  set({ latest: info.version || null });
   if (!info.version || !(info.url || info.files) || !newer(info.version, status.current)) return null;
   const s = stagedVersion();
   if (s && s.version === info.version) return info.version;
@@ -219,8 +220,10 @@ async function check() {
   try {
     let v = null;
     try { v = await checkDownloads(); } catch (e) { note('downloads check failed: ' + e.message); }
-    if (!v || status.state !== 'ready') { try { const f = await checkFeed(); if (f) v = f; } catch (e) { note('online check failed: ' + e.message); if (status.state === 'downloading') set({ state: 'none', version: null, progress: 0 }); } }
+    let feedErr = '', latest = null;
+    if (!v || status.state !== 'ready') { try { const f = await checkFeed(); if (f) v = f; } catch (e) { feedErr = e.message; note('online check failed: ' + e.message); if (status.state === 'downloading') set({ state: 'none', version: null, progress: 0 }); } }
     if (!v && (status.state === 'checking')) set({ state: 'none' });
+    set({ lastCheck: new Date().toISOString(), lastError: feedErr });
   } finally { busy = false; }
   return status;
 }

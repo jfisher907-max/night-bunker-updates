@@ -46,6 +46,7 @@
     </div>
     <div class="restart" id="dRestart" hidden><span>Some changes apply after a restart. Your Depot progress is saved.</span><button class="btn ghost" id="dRestartBtn">Restart now</button></div>
     <div class="row"><button class="btn" id="dBack">Done</button><button class="btn ghost" id="dQuit">Quit to desktop</button><button class="btn ghost" id="dCheck">Check for updates</button><span class="note" style="margin:0" id="dVer"></span></div>
+    <div class="note" id="dUpd" style="margin:10px 0 0;font-size:13px"></div>
   </div>`;
   document.body.appendChild(ov);
 
@@ -127,7 +128,15 @@
       card.classList.toggle('err', cerr); card.innerHTML = c ? `<div class="card">${c}</div>` : ''; card.hidden = !c;
       if (c && card.querySelector('button')) card.querySelector('button').focus();
       if (c && u.updated && u.updated.ok && !shownOk && !card._t) card._t = setTimeout(() => { if (!shownOk) { shownOk = true; renderUpd(); } }, 12000);
-      $('dCheck').textContent = checking ? 'Checking…' : u.state === 'none' ? 'Up to date · check again' : 'Check for updates';
+      $('dCheck').textContent = checking ? 'Checking…' : 'Check for updates';
+      const when = u.lastCheck ? new Date(u.lastCheck).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+      $('dUpd').textContent = checking ? 'Checking for updates…'
+        : u.state === 'off' ? 'Updates: off in this copy.'
+        : u.lastError ? `Updates: couldn't reach the update server at ${when} (${u.lastError}). You're on v${u.current}.`
+        : u.state === 'ready' ? `Updates: v${u.version} is ready. Use Update now on the title screen.`
+        : u.state === 'downloading' ? `Updates: downloading v${u.version}… ${Math.round((u.progress || 0) * 100)}%`
+        : u.lastCheck ? `Updates: up to date. You're on v${u.current}${u.latest ? ', the newest is v' + u.latest : ''} (checked ${when}).`
+        : 'Updates: checking shortly after launch.';
     }
     card.addEventListener('click', e => { if (e.target.dataset && e.target.dataset.a === 'dismiss') { shownOk = true; if (us.state === 'error') us = { ...us, state: 'none', message: '' }; renderUpd(); } });
     window.addEventListener('keydown', e => { if (!card.hidden) { e.stopImmediatePropagation(); if ((e.key === 'Enter' || e.key === 'Escape') && card.querySelector('button')) { e.preventDefault(); card.querySelector('button').click(); } } }, true);

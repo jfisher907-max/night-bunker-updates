@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.76.1'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.77.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -9539,7 +9539,7 @@ const ZombieModel = (() => {
     PHI = { idx, par }; return PHI;
   }
   function physHit(m, px, py, pz, dx, dy, dz, k, leg) {
-    if (!m.skinned || !prepare() || !k) return;
+    if (!m.skinned || !m.bones || !prepare() || !k) return;   // v6.77 hounds are skinned but carry no zombie bones
     const I = phPrep(), n = I.idx.length;
     const S = m._ph || (m._ph = { w: [], v: [], o: new THREE.Vector3(), ov: new THREE.Vector3(), on: false, calm: 0 });
     for (let j = 0; j < n; j++) { S.w[j] = S.w[j] || new THREE.Vector3(); S.v[j] = S.v[j] || new THREE.Vector3(); }

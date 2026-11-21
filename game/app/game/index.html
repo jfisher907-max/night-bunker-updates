@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.77.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.77.3'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -8747,7 +8747,7 @@ const ZombieModel = (() => {
   'use strict';
   const PR = ZombieProc, C = PR.channels, TAU = Math.PI * 2, FOOTK = 1;
   // v6.28 joint ranges per channel (rad; research/joint-biomechanics.md section 11, zombie column: a little hyperextension at elbow and knee)
-  const D2R = Math.PI / 180, ZL = { kL: [-140 * D2R, 10 * D2R], kR: [-140 * D2R, 10 * D2R], eL: [-15 * D2R, 145 * D2R], eR: [-15 * D2R, 145 * D2R],
+  const D2R = Math.PI / 180, ZL = { kL: [-140 * D2R, -3 * D2R], kR: [-140 * D2R, -3 * D2R], eL: [6 * D2R, 145 * D2R], eR: [6 * D2R, 145 * D2R],   // v6.77.3 no hyperextension: knees and elbows never pass straight, never lock
     lLX: [-30 * D2R, 125 * D2R], lRX: [-30 * D2R, 125 * D2R], aLX: [-55 * D2R, 180 * D2R], aRX: [-55 * D2R, 180 * D2R], upRX: [-85 * D2R, 25 * D2R],
     upRZ: [-30 * D2R, 30 * D2R], wL: [-0.98, 1.47], wR: [-0.98, 1.47], neckRX: [-60 * D2R, 50 * D2R], headRX: [-60 * D2R, 60 * D2R],
     fL: [-0.78, 0.62], fR: [-0.78, 0.62] }, ZLEG = { kL: 1, kR: 1, lLX: 1, lRX: 1, fL: 1, fR: 1 };   // ankle channel: plantarflexion 50 / dorsiflexion 30 (foot rest offset measured)   // FOOTK: v6.1 foot-pitch sign on the rig
@@ -8845,7 +8845,7 @@ const ZombieModel = (() => {
       for (const k in parts) for (const m of parts[k]) { mats[m.material.name] = m.material; m.material.envMapIntensity = 0.35; }
       A = { inv: skel.boneInverses, g, parts, bones, names, rootBone, rigNode, turn, hp, hq, hs, Aq, Bq, rootParentQ, idx, rootRest: rootBone.position.clone(), eyeLocal, fwdLocal, hb, mats, X,
         boxGeo: new THREE.BoxGeometry(1, 1, 1), boxMat: new THREE.MeshBasicMaterial({ visible: false }), eyeGeo: new THREE.SphereGeometry(0.0115, 8, 6), shield: null };
-      A.boxGeo.translate(0, 0, 0);
+      A.boxGeo.translate(0, 0, 0); looseInit();   // v6.77.1
       return A;
     } catch (e) { console.warn('ZombieModel: skinned zombies unavailable, using the procedural ones', e); return (A = false); }
   }
@@ -9054,7 +9054,7 @@ const ZombieModel = (() => {
     const root = A.rootBone.clone(); holder.add(root);
     const by = {}; root.traverse(b => { if (b.isBone) by[b.name] = b; });
     const bones = A.names.map(n => by[n]);
-    const skeleton = new THREE.Skeleton(bones, A.inv);
+    const skeleton = new THREE.Skeleton(bones, A.inv); jointHelp(bones);   // v6.77.3
     const own = [], meshes = { lod0: [], lod1: [], att: {} };
     // per-zombie looks: skin and cloth tints (uniform colour only: no shader change)
     const skinTint = boss ? 0xb8a8a0 : [0xffffff, 0xf2f6e8, 0xe8e0d8, 0xfff2e0][(rng() * 4) | 0];
@@ -9132,6 +9132,109 @@ const ZombieModel = (() => {
     return { p, q };
   }
 
+  // ---------- v6.77.1 loose body: finger bones, shoulder girdle, follow-through ----------
+  // Fingers: 6 bones per hand (thumb, index, the other three as one grip; two segments each), rest = a relaxed curl, local +X = flexion.
+  // They are driven straight from their rest quaternion (never through setBone: the arm's rest-direction correction must not reach them).
+  const FG_SEG = { thumb1: [0.5, -0.2], thumb2: [0.7, 0.3], index1: [0.9, -0.45], index2: [1.1, 0.55], grip1: [0.9, -0.45], grip2: [1.1, 0.55] };
+  const _fx = new THREE.Vector3(1, 0, 0), _lp = new THREE.Vector3(), _lt = new THREE.Vector3(), _lh = new THREE.Vector3(), _ld = new THREE.Vector3(), _ls = new THREE.Vector3(), _lq = new THREE.Quaternion(), _lpq = new THREE.Quaternion(), _lg = new THREE.Vector3(), _lsc = new THREE.Vector3();
+  function looseInit() {
+    A.fg = [];
+    for (const s of 'LR') for (const n in FG_SEG) { const i = A.idx(n + s); if (i >= 0) A.fg.push({ i, side: s === 'L' ? 0 : 1, c: FG_SEG[n][0], k: FG_SEG[n][1], seg2: /2$/.test(n), ph: A.fg.length * 1.7, q0: A.bones[i].quaternion.clone() }); }
+    // spring bones: [bone, tip length m, weight, Hz, damping ratio, gravity sag, max angle]
+    // v6.77.2 forearms: a passive pendulum about the elbow hinge only (a real elbow has one axis), so the elbow gives and overlaps instead of holding one angle
+    A.sp = [['spine_upper', 0.30, 0.22, 2.2, 0.7, 0, 0.25], ['head', 0.16, 0.3, 2.6, 0.55, 0.05, 0.4], ['forearmL', 0.27, 0.5, 1.9, 0.32, 0.22, 0.42, 0], ['forearmR', 0.27, 0.5, 1.9, 0.32, 0.22, 0.42, 1],
+      ['handL', 0.11, 0.7, 3.2, 0.42, 0.2, 0.55], ['handR', 0.11, 0.7, 3.2, 0.42, 0.2, 0.55]]
+      .map(r => ({ i: A.idx(r[0]), len: r[1], w: r[2], k: Math.pow(TAU * r[3], 2), c: 2 * r[4] * TAU * r[3], sag: r[5], max: r[6], hinge: r[7] })).filter(r => r.i >= 0);
+    for (const r of A.sp) if (r.hinge != null) r.h = new THREE.Vector3(1, 0, 0).applyQuaternion(A.Aq[r.i]);
+    // v6.77.3 half-angle joint helpers (elbowH, kneeH): each takes half of its joint's turn so the bent joint keeps its width
+    A.jh = [];
+    for (const [hn, cn] of [['elbowH', 'forearm'], ['kneeH', 'shin']]) for (const s of 'LR') { const hi = A.idx(hn + s), ci = A.idx(cn + s); if (hi >= 0 && ci >= 0) A.jh.push({ hi, ci, q0: A.bones[hi].quaternion.clone(), c0i: A.bones[ci].quaternion.clone().invert() }); }
+    A.pr = [];
+    for (const s of 'LR') { const h = A.idx('hand' + s), t = A.idx('ftwist' + s); if (h < 0) { A.pr.push(null); continue; }
+      A.pr.push({ h, t, axis: A.bones[h].position.clone().normalize(), sign: s === 'L' ? 1 : -1, q0: t >= 0 ? A.bones[t].quaternion.clone() : null }); }
+    // shoulder girdle: which way a clavicle turn lifts the shoulder / brings it forward (measured on the rest skeleton, group frame)
+    A.cs = {};
+    const fake = { bones: A.bones }, pos = n => { const b = A.bones[A.idx(n)]; b.updateWorldMatrix(true, false); return new THREE.Vector3().setFromMatrixPosition(b.matrixWorld).applyQuaternion(A.turn); };
+    for (const s of 'LR') {
+      const ci = A.idx('clavicle' + s); if (ci < 0) continue; const keep = A.bones[ci].quaternion.clone();
+      setBone(fake, 'clavicle' + s, 0, 0, 0); const p0 = pos('upperarm' + s);
+      setBone(fake, 'clavicle' + s, 0, 0, 0.1); const ez = Math.sign(pos('upperarm' + s).y - p0.y) || 1;
+      setBone(fake, 'clavicle' + s, 0, 0.1, 0); const py = Math.sign(p0.z - pos('upperarm' + s).z) || 1;
+      A.bones[ci].quaternion.copy(keep); A.cs[s] = { ez, py };
+    }
+  }
+  // The helper reads its joint's local turn whenever the scene refreshes its matrices, so walking, foot planting, ragdolls and corpses are all covered.
+  function jointHelp(bones) {
+    if (!A.jh) return;
+    for (const j of A.jh) { const h = bones[j.hi], c = bones[j.ci], d = new THREE.Quaternion(); if (!h || !c) continue;
+      h.updateMatrixWorld = function (force) { d.copy(c.quaternion).multiply(j.c0i); if (d.w < 0) d.set(-d.x, -d.y, -d.z, -d.w); d.slerp(QI, 0.5); this.quaternion.copy(d).multiply(j.q0); THREE.Object3D.prototype.updateMatrixWorld.call(this, force); }; }
+  }
+  function girdle(m, Q) {
+    if (!A.cs) return;
+    for (const s of 'LR') {
+      const L = s === 'L', fl = Q[L ? C.aLX : C.aRX], ab = Q[L ? C.aLA : C.aRA], cs = A.cs[s]; if (!cs) continue;
+      (m._fl || (m._fl = [0, 0]))[L ? 0 : 1] = fl; (m._el || (m._el = [0, 0]))[L ? 0 : 1] = Q[L ? C.eL : C.eR];
+      const raise = Math.max(0, Math.hypot(fl, ab) - 0.5), el = Math.min(0.32, raise * 0.22), pr = 0.2 * Math.sin(Math.min(Math.PI, Math.max(0, fl)));
+      setBone(m, 'clavicle' + s, 0, cs.py * pr, cs.ez * el);   // the collarbone lifts about a third as much as the arm does, and comes forward on a reach
+    }
+  }
+  // Forearm rotation (v6.77.2). A real forearm turns the hand by rolling the radius over the ulna: no twist at the elbow, all of it at the wrist.
+  // The hand turns palm-down as the arm comes up to reach (pronation, 75-80 degrees is the human limit); the twist bone carries the wrist half of the forearm skin.
+  const PRON = [0.15, 1.15];
+  function pronate(m) {
+    const P = A.pr; if (!P) return; const fl = m._fl || [0, 0], o = window.__nbPr || PRON;
+    for (let s = 0; s < 2; s++) {
+      const p = P[s]; if (!p) continue; const u = Math.min(1, Math.max(0, (fl[s] - 0.25) / 0.9)), th = (o[0] + (o[1] - o[0]) * u * u * (3 - 2 * u)) * p.sign;
+      m.bones[p.h].quaternion.premultiply(_lq.setFromAxisAngle(p.axis, th));
+      if (p.t >= 0) m.bones[p.t].quaternion.copy(p.q0).premultiply(_lq.setFromAxisAngle(p.axis, th * 0.75));
+    }
+  }
+  function fingers(m, a, dt) {
+    const F = A.fg; if (!F || !F.length) return;
+    const st = m._fg || (m._fg = { c: [0, 0], k: [0, 0], t: (m.asym && m.asym.seed || 0) * 37 }); st.t += dt;
+    let c = 0, k = 0.18, noise = 1;
+    if (a.state === 'dead') { c = 0.22; k = 0; noise = 0; }
+    else if (a.tearK >= 0) { c = 0.85; k = 0; noise = 0.3; }                                   // gripping a plank
+    else if (a.attackT > 0) { const u = Math.min(1, a.attackT / 0.45); if (u > 0.45) { c = -0.25; k = 1; } else { c = 0.75; k = 0.2; } noise = 0.3; }   // claws open on the wind-up, close on the hit
+    else if (a.state === 'chase' && a.moving) k = 0.42;
+    const g = dt > 0 ? 1 - Math.exp(-13 * dt) : 1;
+    for (let s = 0; s < 2; s++) { st.c[s] += (c - st.c[s]) * g; st.k[s] += (k - st.k[s]) * g; }
+    for (const f of F) {
+      const s = f.side, tw = Math.pow(Math.max(0, Math.sin(st.t * 0.41 + f.ph * 0.6 + s * 2.1)), 10);     // an occasional twitch
+      let ang = f.c * st.c[s] + f.k * st.k[s] + noise * ((f.seg2 ? 0.11 : 0.07) * Math.sin(st.t * 1.3 + f.ph + s) + 0.3 * tw * (f.seg2 ? 1 : 0.4));
+      ang = f.seg2 ? Math.max(-0.2, Math.min(1.5, ang)) : Math.max(-0.6, Math.min(1.3, ang));
+      m.bones[f.i].quaternion.copy(f.q0).multiply(_lq.setFromAxisAngle(_fx, ang));
+    }
+  }
+  // follow-through: a point mass at each bone's tip trails the animated tip on a damped spring (and sags under gravity); the bone leans toward it.
+  function loose(m, a, dt) {
+    fingers(m, a, dt);
+    const S = A.sp; if (!S || !(dt > 0)) return;
+    const st = m._sp || (m._sp = S.map(() => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), on: false })));
+    const grip = a.tearK >= 0 ? 0.3 : 1, n = Math.min(3, Math.max(1, Math.ceil(dt / 0.017))), h = Math.min(dt, 0.05) / n;
+    _lg.setFromMatrixPosition(m.group.matrixWorld);
+    for (let j = 0; j < S.length; j++) {
+      const r = S[j], b = m.bones[r.i], q = st[j]; b.updateWorldMatrix(true, false);
+      const e = b.matrixWorld.elements; _lh.set(e[12], e[13], e[14]); _ld.set(e[4], e[5], e[6]); const sc = _ld.length() || 1; _ld.multiplyScalar(1 / sc);   // bone origin and its long axis
+      const len = r.len * m.group.scale.x;
+      _lt.copy(_ld).multiplyScalar(len).add(_lh).sub(_lg); _lt.y -= r.sag * len;                // target tip, relative to the zombie
+      if (!q.on || q.p.distanceToSquared(_lt) > 0.16 * len * len / (r.len * r.len)) { q.p.copy(_lt); q.v.set(0, 0, 0); q.on = true; }
+      for (let i = 0; i < n; i++) { q.v.x += (r.k * (_lt.x - q.p.x) - r.c * q.v.x) * h; q.v.y += (r.k * (_lt.y - q.p.y) - r.c * q.v.y) * h; q.v.z += (r.k * (_lt.z - q.p.z) - r.c * q.v.z) * h; q.p.addScaledVector(q.v, h); }
+      _ls.copy(q.p).add(_lg).sub(_lh); const sl = _ls.length(); if (sl < 1e-5) continue; _ls.multiplyScalar(1 / sl);
+      _lq.setFromUnitVectors(_ld, _ls);
+      let ang = 2 * Math.acos(Math.min(1, Math.abs(_lq.w))); const lim = r.max; let w = r.w * grip; if (ang * w > lim) w = lim / ang;
+      if (ang < 1e-4) continue;
+      _lq.slerp(QI, 1 - w);
+      b.parent.matrixWorld.decompose(_lp, _lpq, _lsc);                                           // world lean -> the bone's parent frame
+      _q.copy(_lpq).invert().multiply(_lq).multiply(_lpq);
+      if (r.h) {                                                                                  // keep only the turn about the hinge; never past straight
+        const hx = r.h.x, hy = r.h.y, hz = r.h.z, d = _q.x * hx + _q.y * hy + _q.z * hz; let an = 2 * Math.atan2(d, _q.w); if (an > Math.PI) an -= TAU; else if (an < -Math.PI) an += TAU;
+        const lo = -0.7 * Math.max(0, (m._el || [0, 0])[r.hinge]); if (an < lo) an = lo; _q.setFromAxisAngle(r.h, an);
+      }
+      b.quaternion.premultiply(_q);
+    }
+  }
+
   // channel solve -> bone rotations
   const _R = new THREE.Quaternion(), _H = new THREE.Quaternion();
   function setBone(m, name, rx, ry, rz) {
@@ -9154,11 +9257,11 @@ const ZombieModel = (() => {
     setBone(m, 'jaw', -Q[C.jaw] * 0.55, 0, 0);
     setBone(m, 'upperarmL', Q[C.aLX], Q[C.aLY], -Q[C.aLA]); setBone(m, 'upperarmR', Q[C.aRX], Q[C.aRY], Q[C.aRA]);
     setBone(m, 'forearmL', Q[C.eL], 0, 0); setBone(m, 'forearmR', Q[C.eR], 0, 0);
-    setBone(m, 'handL', 0.25 - Q[C.wL], 0, 0); setBone(m, 'handR', 0.25 - Q[C.wR], 0, 0);
+    setBone(m, 'handL', 0.25 - Q[C.wL], 0, 0); setBone(m, 'handR', 0.25 - Q[C.wR], 0, 0); pronate(m);   // v6.77.2
     setBone(m, 'thighL', Q[C.lLX], 0, -Q[C.lLA]); setBone(m, 'thighR', Q[C.lRX], 0, Q[C.lRA]);
     setBone(m, 'shinL', Q[C.kL], 0, 0); setBone(m, 'shinR', Q[C.kR], 0, 0);
     setBone(m, 'footL', -0.05 + Q[C.fL] * FOOTK, 0, 0); setBone(m, 'footR', -0.05 + Q[C.fR] * FOOTK, 0, 0);
-    setBone(m, 'clavicleL', 0, 0, 0); setBone(m, 'clavicleR', 0, 0, 0);
+    setBone(m, 'clavicleL', 0, 0, 0); setBone(m, 'clavicleR', 0, 0, 0); girdle(m, Q);   // v6.77.1
     const hb = m.bones[A.idx('head')], hs = m.head.visible ? 1 : 0.0001; if (hb.scale.x !== hs) hb.scale.setScalar(hs);
   }
 
@@ -9181,12 +9284,13 @@ const ZombieModel = (() => {
   function animate(model, a, dt) {
     if (!model.skinned) return PR.animate(model, a, dt);
     model._crawl = a.speedKind === 'crawl' || model.variant === 'crawler'; apply(model, PR.solve(model, a, dt));
+    if (model.lodLevel === 0 && !model._lowT) loose(model, a, dt);   // v6.77.1 near zombies only
     if (model._ph && model._ph.on) { if (a.state === 'dead' || a.state === 'getup' || a.state === 'rise') model._ph.on = false; else physStep(model, dt); }   // v6.71
   }
   // LOD: about a third of the triangles past ~16 m (9 m on Low)
   function lod(model, dist, tier) {   // tier 'low' | 'medium' | 'high' (true = low, for older callers)
     if (!model.skinned) return;
-    const lowT = tier === true || tier === 'low', far = lowT ? 9 : tier === 'medium' ? 12 : 16;
+    const lowT = tier === true || tier === 'low', far = lowT ? 9 : tier === 'medium' ? 12 : 16; model._lowT = lowT;
     const cast = tier === 'high' && dist < 14;   // only the near horde casts real shadows; the contact blobs ground the rest
     if (model.castT !== cast) { model.castT = cast; for (const m of model.meshes.lod0.concat(model.meshes.lod1)) { m.castShadow = cast; if (!m.userData.nbZ) { m.userData.nbZ = true; m.layers.disable(1); } } }   // v6.73.1 movers stay out of the cached maps
     const want = model.lodLevel ? (dist > far - 1.5 ? 1 : 0) : (dist > far ? 1 : 0);

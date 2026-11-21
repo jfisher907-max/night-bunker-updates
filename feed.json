@@ -1,7 +1,7 @@
 {
- "version": "6.77.5",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/5c30986a88bc6c80b415d4876a1214c898b261c0/game/",
- "notes": "Trench map: doors sit on the trench floor (buy without jumping, walk through once open); the dead come down dug saps to every barricade and tear the boards at your height.",
+ "version": "6.78.0",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/1006ad8f120467e91a39e472e56c194298e6540f/game/",
+ "notes": "Night Bunker 6.78.0",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -2000,8 +2000,8 @@
    "ada44864241b96badcf89ae2bc8baed558044f6fdc85b8cbb8cab0dcf6effefd"
   ],
   "app/game/index.html": [
-   3372564,
-   "d03cdb74da5e1660b647c5f57e135f2558c3ddc92eb368708b06e7edb5691e4e"
+   3373873,
+   "436ab74f815f5bbc3e26ad8d75af5dadc544aa03d0816bc5994b2e1d0d82a885"
   ],
   "app/game/vendor/fonts.css": [
    314,
@@ -2025,7 +2025,7 @@
   ],
   "package.json": [
    2194,
-   "20a928e901cc3feb9fe6d7fbfb0ced5478fa9eb6b012e575bba5a60f5d703509"
+   "96fe0ea88ad45c91294f79060d87042bf131b42b1a2912cf7be031c461e92562"
   ],
   "src/main.js": [
    8483,

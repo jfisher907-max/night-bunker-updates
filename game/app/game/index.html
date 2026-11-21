@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.77.5'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.78.0'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -5926,19 +5926,19 @@ void main() {
 		vec2 tx = 1.0 / size;
 		float rot = fract( sin( dot( gl_FragCoord.xy, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) * 6.2832;
 		float bs = 0.0, bn = 0.0;
-		for ( int i = 0; i < 8; i ++ ) {
-			float a = rot + float( i ) * 2.4, r = sqrt( ( float( i ) + 0.5 ) * 0.125 ) * 6.0;
+		for ( int i = 0; i < 12; i ++ ) {
+			float a = rot + float( i ) * 2.4, r = sqrt( ( float( i ) + 0.5 ) / 12.0 ) * 6.0;
 			float d = unpackRGBAToDepth( texture2D( map, c.xy + vec2( cos( a ), sin( a ) ) * r * tx ) );
 			if ( d < c.z ) { bs += d; bn += 1.0; }
 		}
 		if ( bn < 0.5 ) return 1.0;
 		float pen = clamp( ( c.z - bs / bn ) * 1000.0, 1.0, 9.0 );
 		float sum = 0.0;
-		for ( int i = 0; i < 16; i ++ ) {
-			float a = rot + float( i ) * 2.4, r = sqrt( ( float( i ) + 0.5 ) * 0.0625 ) * pen;
+		for ( int i = 0; i < 24; i ++ ) {
+			float a = rot + float( i ) * 2.4, r = sqrt( ( float( i ) + 0.5 ) / 24.0 ) * pen;
 			sum += step( c.z, unpackRGBAToDepth( texture2D( map, c.xy + vec2( cos( a ), sin( a ) ) * r * tx ) ) );
 		}
-		return sum * 0.0625;
+		return sum / 24.0;
 	}
 	float nbMoonShadow( sampler2D nearMap, DirectionalLightShadow nearS, vec4 nearC, sampler2D farMap, DirectionalLightShadow farS, vec4 farC ) {
 		vec3 n = nearC.xyz / nearC.w;
@@ -6219,6 +6219,7 @@ vec2 nbElev( float b ) { float c = b * 255.0, r = step( 127.5, c ); return vec2(
   U.nbPomOn = { value: 0 }; U.nbPomN = { value: 14 };
   const POM = { brick: 0.024, cobble: 0.026, stone: 0.05, floorPlank: 0.014, planks: 0.016, roofTile: 0.028, sandbag: 0.08 }, HGT = {};
   function setUltra(on) {
+    { const was = UL; UL = !!on; if (was !== UL && worldRoot) aniso(null, Q); }   // v6.78 setQuality calls aniso before setUltra: redo it when Ultra flips
     U.nbPomOn.value = on ? 1 : 0; U.nbPomN.value = document.documentElement.classList.contains('touch') ? 8 : 14; if (!on || typeof TexPack === 'undefined' || !TexPack.height) return;
     for (const k in POM) { if (!HGT[k]) HGT[k] = { value: white }; if (HGT[k].value === white) { try { HGT[k].value = TexPack.height(k) || white; } catch (e) { HGT[k].value = white; } } }
   }
@@ -6580,11 +6581,11 @@ void main() { vec2 c = gl_PointCoord - 0.5; float r = dot( c, c ) * 4.0; gl_Frag
   }
 
   // ------------------------------------------------------------------ texture filtering: sharp floors and walls at grazing angles
-  let maxAniso = 1, worldRoot = null;
+  let maxAniso = 1, worldRoot = null, UL = false;   // v6.78 UL: Ultra is on (setUltra), read by aniso
   function aniso(root, q, renderer) {
     if (renderer) maxAniso = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
     if (root) worldRoot = root; root = worldRoot; if (!root) return;
-    const a = Math.min(maxAniso, q === 'high' ? 8 : q === 'medium' ? 4 : 2), seen = new Set();
+    const a = Math.min(maxAniso, q === 'high' ? (UL && !document.documentElement.classList.contains('touch') ? 16 : 8) : q === 'medium' ? 4 : 2), seen = new Set();   // v6.78 16x on Ultra desktop
     root.traverse(o => {
       if (!o.isMesh) return;
       for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
@@ -6888,6 +6889,7 @@ class PostFX {
     };
     const ultraOn = this._ultra && this._quality === 'high' && this.isWebGL2 && this.halfFloat; this._ultraOn = ultraOn; this._histOK = 0;
     const lite = this._lite = ultraOn && document.documentElement.classList.contains('touch');   // v6.45.3 tablets: fewer steps, smaller passes
+    const ux = this._ux = ultraOn && !lite;   // v6.78 Ultra on a desktop GPU: bounce light at half res, reflections full res, volumetrics half res, more taps
     const ms = !ultraOn && this._quality === 'high' && this.isWebGL2 && W * H <= 2.3e6;   // 4x MSAA only while the target is about 1080p or smaller
     // stencilBuffer:true makes r128 allocate DEPTH24_STENCIL8 instead of DEPTH_COMPONENT16 (no z-fighting at 220 m far).
     const sceneOpts = Object.assign({ depthBuffer: true, stencilBuffer: true }, common);
@@ -6908,7 +6910,7 @@ class PostFX {
       const aw = Math.max(1, Math.ceil(W / 2)), ah = Math.max(1, Math.ceil(H / 2));
       this._ao = [new THREE.WebGLRenderTarget(aw, ah, ao), new THREE.WebGLRenderTarget(aw, ah, ao)]; this._aoTexel = new THREE.Vector2(1 / aw, 1 / ah);
       if (!document.documentElement.classList.contains('touch')) this._mbT = new THREE.WebGLRenderTarget(W, H, Object.assign({ depthBuffer: false, stencilBuffer: false }, common));   // v6.74 motion blur target (desktop)
-      const gw = Math.max(1, Math.ceil(W / 4)), gh = Math.max(1, Math.ceil(H / 4));   // v6.75 bounce light at quarter res (range-compressed rgb, linear depth in a)
+      const gd = ux ? 2 : 4, gw = Math.max(1, Math.ceil(W / gd)), gh = Math.max(1, Math.ceil(H / gd));   // v6.75 bounce light at quarter res (v6.78 half on Ultra desktop) (range-compressed rgb, linear depth in a)
       this._gi = [new THREE.WebGLRenderTarget(gw, gh, ao), new THREE.WebGLRenderTarget(gw, gh, ao)]; this._giTexel = new THREE.Vector2(1 / gw, 1 / gh);
     }
     if (high) {   // v6.74 eye adaptation: a 1x1 log-average luminance, eased over time (two tiny targets, 16-bit packed in RGBA8)
@@ -6918,8 +6920,8 @@ class PostFX {
     if (ultraOn) {   // v6.45: history pair (full res), reflections (half), volumetric light (quarter)
       const fo = { type: THREE.HalfFloatType, format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false, depthBuffer: false, stencilBuffer: false };
       this._hist = [new THREE.WebGLRenderTarget(W, H, fo), new THREE.WebGLRenderTarget(W, H, fo)];
-      this._ssr = new THREE.WebGLRenderTarget(Math.ceil(W / (lite ? 4 : 2)), Math.ceil(H / (lite ? 4 : 2)), fo);
-      this._vol = new THREE.WebGLRenderTarget(Math.ceil(W / (lite ? 8 : 4)), Math.ceil(H / (lite ? 8 : 4)), fo);
+      this._ssr = new THREE.WebGLRenderTarget(Math.ceil(W / (lite ? 4 : ux ? 1 : 2)), Math.ceil(H / (lite ? 4 : ux ? 1 : 2)), fo);
+      this._vol = new THREE.WebGLRenderTarget(Math.ceil(W / (lite ? 8 : ux ? 2 : 4)), Math.ceil(H / (lite ? 8 : ux ? 2 : 4)), fo);
     }
     if (aoOn && !ultraOn && !document.documentElement.classList.contains('touch')) this._ssr = new THREE.WebGLRenderTarget(Math.ceil(W / 2), Math.ceil(H / 2), Object.assign({ depthBuffer: false, stencilBuffer: false }, common));   // v6.75 reflections on High (desktop)
 
@@ -6998,7 +7000,7 @@ class PostFX {
     if (aoK > 0.001 || ultra) {   // Ultra always runs it: its linear depth drives the reprojection
       const su = this._ssao.uniforms, pe = camera.projectionMatrix.elements;
       su.tDepth.value = this.sceneTarget.depthTexture; su.res.value.set(this._w, this._h); su.near.value = camera.near; su.far.value = camera.far;
-      su.projK.value.set(pe[0], pe[5]); su.radius.value = S.aoRadius; su.intensity.value = S.aoIntensity; su.bias.value = S.aoBias;
+      su.projK.value.set(pe[0], pe[5]); su.radius.value = S.aoRadius; su.intensity.value = S.aoIntensity; su.bias.value = S.aoBias; su.nsamp.value = ultra && !this._lite ? 24 : 12;
       su.csK.value = aoK > 0.001 ? S.contact : 0; if (p.moonDir) su.moonV.value.copy(p.moonDir).transformDirection(camera.matrixWorldInverse);   // v6.73 contact shadows march toward the moon
       {   // v6.75 the four lit lamps nearest the camera, in view space, for the lamp contact shadows
         const cp = (this._v3b || (this._v3b = new THREE.Vector3())).setFromMatrixPosition(camera.matrixWorld); this._lights(scene, cp);   /* its own vector: _lights uses _v3a as a scratch */ const LP = this._volMat.uniforms.lampP.value, LV = su.lampV.value, v4 = this._v4a || (this._v4a = new THREE.Vector4());
@@ -7014,7 +7016,7 @@ class PostFX {
       this._giOn = !!(this._gi && aoK > 0.001 && giUser > 0 && S.gi > 0.001);
       if (this._giOn) {
         const gu = this._giMat.uniforms; gu.tDepth.value = this.sceneTarget.depthTexture; gu.tScene.value = this.sceneTarget.texture; gu.res.value.set(this._w, this._h); gu.near.value = camera.near; gu.far.value = camera.far; gu.projK.value.set(pe[0], pe[5]);
-        gu.radius.value = S.giRadius; gu.gain.value = S.giGain; gu.frame.value = ultra ? this._frame % 8 : 0;
+        gu.radius.value = S.giRadius; gu.gain.value = S.giGain; gu.frame.value = ultra ? this._frame % 8 : 0; gu.nsamp.value = this._ux ? 32 : 16; gu.nrmPx.value = this._ux ? 2 : 4;
         this._pass(this._giMat, this._gi[0]);
         const gb = this._giBlur.uniforms; gb.far.value = camera.far;
         gb.tInput.value = this._gi[0].texture; gb.dir.value.set(this._giTexel.x, 0); this._pass(this._giBlur, this._gi[1]);
@@ -7143,7 +7145,7 @@ class PostFX {
     const S = this.settings, pe = camera.projectionMatrix.elements, dt = this.sceneTarget.depthTexture;
     const vu = this._volMat.uniforms;
     vu.tDepth.value = dt; vu.near.value = camera.near; vu.far.value = camera.far; vu.projK.value.set(pe[0], pe[5]); vu.camWorld.value.copy(camera.matrixWorld);
-    vu.steps.value = this._lite ? 10 : 24; vu.lampN.value = this._lite ? 4 : 8;
+    vu.steps.value = this._lite ? 10 : this._ux ? 40 : 24; vu.lampN.value = this._lite ? 4 : 8;
     vu.camPos.value.setFromMatrixPosition(camera.matrixWorld); vu.frame.value = this._frame % 64; vu.maxDist.value = S.volDist; vu.moonK.value = S.volMoon; vu.lampK.value = S.volLamp;
     vu.density.value = S.volDensity * (scene.fog && scene.fog.density ? Math.min(2, scene.fog.density / 0.04) : 1);
     const L = this._lights(scene, vu.camPos.value);
@@ -7156,7 +7158,7 @@ class PostFX {
     this._pass(this._volMat, this._vol);
     const su = this._ssrMat.uniforms;
     su.tDepth.value = dt; su.tScene.value = this.sceneTarget.texture; su.res.value.set(this._w, this._h); su.projK.value.set(pe[0], pe[5]);
-    su.near.value = camera.near; su.far.value = camera.far; su.frame.value = this._frame % 64; su.maxDist.value = S.ssrDist; su.steps.value = this._lite ? 16 : 40;
+    su.near.value = camera.near; su.far.value = camera.far; su.frame.value = this._frame % 64; su.maxDist.value = this._ux ? S.ssrDist * 1.5 : S.ssrDist; su.steps.value = this._lite ? 16 : this._ux ? 64 : 40;
     this._pass(this._ssrMat, this._ssr);
   }
   // the moon and up to eight lit lamps nearest the camera (the list is rebuilt every 30 frames; nothing is added to the scene)
@@ -7164,7 +7166,7 @@ class PostFX {
     const c = this._lc || (this._lc = { t: 0, scene: null, all: [], sun: null });
     if (c.scene !== scene || --c.t <= 0) {
       c.t = 30; c.scene = scene; c.all.length = 0; c.sun = null;
-      c.far = null; scene.traverseVisible(o => { if (!o.isLight) return; if (o.isDirectionalLight) { if (o.userData && o.userData.nbFar) c.far = o; else if (!c.sun || o.castShadow) c.sun = o; } else if ((o.isPointLight || o.isSpotLight) && o.intensity > 0) c.all.push(o); if (!o.isDirectionalLight && o.castShadow && o.shadow && o.shadow.mapSize.x === 512) { o.shadow.mapSize.set(1024, 1024); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } o.shadow.needsUpdate = true; } });   // sharper lamp shadows (v6.75: the cached map re-renders at once, or the lamp is dark until its next bake)
+      c.far = null; scene.traverseVisible(o => { if (!o.isLight) return; if (o.isDirectionalLight) { if (o.userData && o.userData.nbFar) c.far = o; else if (!c.sun || o.castShadow) c.sun = o; } else if ((o.isPointLight || o.isSpotLight) && o.intensity > 0) c.all.push(o); const ls = this._ux ? 2048 : 1024; if (!o.isDirectionalLight && o.castShadow && o.shadow && o.shadow.mapSize.x < ls && o.shadow.mapSize.x <= 1024) { o.shadow.mapSize.set(ls, ls); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } o.shadow.needsUpdate = true; } });   // sharper lamp shadows (v6.78: 2048 on Ultra desktop) (v6.75: the cached map re-renders at once, or the lamp is dark until its next bake)
     }
     const vu = this._volMat.uniforms, P = vu.lampP.value, C = vu.lampC.value, v = this._v3a;
     const near = c.all.map(o => [o, v.setFromMatrixPosition(o.matrixWorld).distanceToSquared(cam)]).filter(a => a[1] < 1600 && a[1] > 9 && !(a[0].distance > 0 && a[0].distance < 5)).sort((a, b) => a[1] - b[1]);   // v6.49.4 no lights at the gun or tiny flicker lights
@@ -7232,8 +7234,8 @@ class PostFX {
     }, { USE_BLOOM: 1, USE_FXAA: 0, USE_SSAO: 0, USE_SHARPEN: 0 });
     const cu0 = this._composite.uniforms; cu0.tAO = { value: null }; cu0.tDepthV = { value: null }; cu0.aoStrength = { value: 0 };
     this._ssao = mk(PostFX.FRAG_SSAO, { tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 0.6 }, intensity: { value: 1.5 }, bias: { value: 0.06 }, projK: { value: new THREE.Vector2(1, 1) }, moonV: { value: new THREE.Vector3(0, 1, 0) }, csK: { value: 0 },
-      lampV: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, -1e4, 1)) }, lampK: { value: 0 } });   // v6.75 lamp contact shadows
-    this._giMat = mk(PostFX.FRAG_GI, { tDepth: { value: null }, tScene: { value: null }, res: { value: new THREE.Vector2(1, 1) }, projK: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 1.8 }, gain: { value: 1 }, frame: { value: 0 } });
+      lampV: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, -1e4, 1)) }, lampK: { value: 0 }, nsamp: { value: 12 } });   // v6.75 lamp contact shadows; v6.78 sample count
+    this._giMat = mk(PostFX.FRAG_GI, { tDepth: { value: null }, tScene: { value: null }, res: { value: new THREE.Vector2(1, 1) }, projK: { value: new THREE.Vector2(1, 1) }, near: { value: 0.1 }, far: { value: 100 }, radius: { value: 1.8 }, gain: { value: 1 }, frame: { value: 0 }, nsamp: { value: 16 }, nrmPx: { value: 4 } });
     this._giBlur = mk(PostFX.FRAG_GIBLUR, { tInput: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, far: { value: 100 } });
     this._aoBlur = mk(PostFX.FRAG_AOBLUR, { tInput: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, far: { value: 100 } });
     // v6.74 camera motion blur + eye adaptation
@@ -7332,6 +7334,7 @@ uniform float near, far, radius, intensity, bias;
 uniform vec2 projK;
 uniform vec3 moonV; uniform float csK;
 uniform vec4 lampV[4]; uniform float lampK;   // v6.75
+uniform float nsamp;   // v6.78
 varying vec2 vUv;
 float vz(vec2 uv) { float d = texture2D(tDepth, uv).r; return (near * far) / ((far - near) * d - far); }
 vec3 vp(vec2 uv) { float z = vz(uv); return vec3((uv * 2.0 - 1.0) / projK * -z, z); }
@@ -7346,14 +7349,15 @@ void main() {
   vec3 N = normalize(cross(dx, dy));
   float sr = min(radius * projK.y * 0.5 / -P.z, 0.12);
   float a0 = hash(gl_FragCoord.xy) * 6.2832, sum = 0.0, r2 = radius * radius;
-  for (int i = 0; i < 12; i++) {
-    float t = (float(i) + 0.5) / 12.0, a = a0 + t * 43.98;
+  for (int i = 0; i < 24; i++) {
+    if (float(i) >= nsamp) break;
+    float t = (float(i) + 0.5) / nsamp, a = a0 + t * 43.98;
     vec2 o = vec2(cos(a) * res.y / res.x, sin(a)) * t * sr;
     vec3 v = vp(vUv + o) - P; float vv = dot(v, v);
     float f = max(r2 - vv, 0.0) / r2;
     sum += f * f * f * max(dot(v, N) * inversesqrt(vv + 1e-4) - bias, 0.0);
   }
-  float ao = clamp(1.0 - sum * intensity / 12.0, 0.0, 1.0);
+  float ao = clamp(1.0 - sum * intensity / nsamp, 0.0, 1.0);
   ao = mix(ao, 1.0, smoothstep(22.0, 45.0, -P.z));
   // v6.73 contact shadows: a short march toward the moon through the depth buffer; whatever stands in the way within 40 cm shades this pixel
   float cs = 1.0;
@@ -7466,7 +7470,7 @@ void main() {
 precision highp float;
 uniform sampler2D tDepth, tScene;
 uniform vec2 res, projK;
-uniform float near, far, radius, gain, frame;
+uniform float near, far, radius, gain, frame, nsamp, nrmPx;
 varying vec2 vUv;
 float vz(vec2 uv) { float d = texture2D(tDepth, uv).r; return (near * far) / ((far - near) * d - far); }
 vec3 vp(vec2 uv) { float z = vz(uv); return vec3((uv * 2.0 - 1.0) / projK * -z, z); }
@@ -7474,7 +7478,7 @@ float hash(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx
 void main() {
   float d = texture2D(tDepth, vUv).r;
   if (d >= 0.99999) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
-  vec3 P = vp(vUv); vec2 px = 4.0 / res;
+  vec3 P = vp(vUv); vec2 px = nrmPx / res;
   vec3 Pr = vp(vUv + vec2(px.x, 0.0)), Pl = vp(vUv - vec2(px.x, 0.0)), Pu = vp(vUv + vec2(0.0, px.y)), Pd = vp(vUv - vec2(0.0, px.y));
   vec3 dx = abs(Pr.z - P.z) < abs(P.z - Pl.z) ? Pr - P : P - Pl;
   vec3 dy = abs(Pu.z - P.z) < abs(P.z - Pd.z) ? Pu - P : P - Pd;
@@ -7482,8 +7486,9 @@ void main() {
   float sr = min(radius * projK.y * 0.5 / -P.z, 0.3);
   float a0 = (hash(gl_FragCoord.xy) + frame * 0.125) * 6.2832, r2 = radius * radius;
   vec3 acc = vec3(0.0);
-  for (int i = 0; i < 16; i++) {
-    float t = (float(i) + 0.5) / 16.0, a = a0 + t * 58.64;
+  for (int i = 0; i < 32; i++) {
+    if (float(i) >= nsamp) break;
+    float t = (float(i) + 0.5) / nsamp, a = a0 + t * 58.64;
     vec2 uv2 = vUv + vec2(cos(a) * res.y / res.x, sin(a)) * sqrt(t) * sr;
     if (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0) continue;
     if (texture2D(tDepth, uv2).r >= 0.99999) continue;
@@ -7493,7 +7498,7 @@ void main() {
     vec3 sc = min(texture2D(tScene, uv2).rgb, vec3(6.0));
     acc += sc * c * (1.0 - vv / r2);
   }
-  vec3 gi = acc * (gain * 0.125) * (1.0 - smoothstep(22.0, 40.0, -P.z));
+  vec3 gi = acc * (gain * 2.0 / nsamp) * (1.0 - smoothstep(22.0, 40.0, -P.z));
   gl_FragColor = vec4(gi / (1.0 + gi), -P.z / far);
 }`;
   static FRAG_GIBLUR = /* glsl */`
@@ -7543,7 +7548,7 @@ void main() {
   float dist = min(length(vpos), maxDist);
   vec3 dir = normalize((camWorld * vec4(vpos, 0.0)).xyz);
   float j = fract(52.9829189 * fract(dot(gl_FragCoord.xy + frame * 5.588238, vec2(0.06711056, 0.00583715))));
-  const int N = 24;
+  const int N = 40;
   float stepL = dist / steps;
   float mu = dot(dir, moonDir), g = 0.45;
   float hg = (1.0 - g * g) / (12.566 * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
@@ -7591,9 +7596,9 @@ void main() {
   float stepL = 0.12 + 0.02 * -P.z, j = fract(hash(gl_FragCoord.xy) + frame * 0.618034);
   vec3 q = P + N * 0.02 + R * stepL * j;
   vec2 hit = vec2(-1.0); float thick = 0.0;
-  for (int i = 0; i < 40; i++) {
+  for (int i = 0; i < 64; i++) {
     if (float(i) >= steps) break;
-    q += R * stepL; stepL *= steps < 39.0 ? 1.12 : 1.06;
+    q += R * stepL; stepL *= steps < 39.0 ? 1.12 : steps > 60.0 ? 1.035 : 1.06;
     vec2 u = toUv(q);
     if (u.x < 0.0 || u.x > 1.0 || u.y < 0.0 || u.y > 1.0 || q.z > -near) break;
     float sz = vz(u), dz = sz - q.z;
@@ -23990,11 +23995,11 @@ const NBX = window.NBX = (() => {
       const f = fN * 1000 / (now - fT0), avg = (now - fT0) / fN, w = fWorst; fN = 0; fT0 = now; fWorst = 0;
       if (fpsEl && meta.qpFps) { let px = ''; try { const c = renderer.domElement; px = ` · ${c.width}x${c.height}`; } catch (e) {}
         const gv = typeof G !== 'undefined' && G.govScale && G.govScale < 0.99 ? ` · gov ${Math.round(G.govScale * 100)}%` : '', bc = typeof G !== 'undefined' && G.fpsCap ? ' · browser cap' : '';
-        fpsEl.textContent = `${Math.round(f)} fps · ${avg.toFixed(1)} ms · worst ${Math.round(w)} ms · ${fx.ultra ? 'Ultra' : ({ low: 'Low', medium: 'Medium', high: 'High' })[fx.quality] || ''}${px}${+meta.qpScale < 100 ? ' · ' + meta.qpScale + '%' : ''}${cap ? ' · cap ' + cap : ''}${gv}${bc}${window.__nbAU && __nbAU.short ? ' · snd ' + __nbAU.short() : ''}`; }
+        fpsEl.textContent = `${Math.round(f)} fps · ${avg.toFixed(1)} ms · worst ${Math.round(w)} ms · ${fx.ultra ? 'Ultra' : ({ low: 'Low', medium: 'Medium', high: 'High' })[fx.quality] || ''}${px}${+meta.qpScale != 100 ? ' · ' + meta.qpScale + '%' : ''}${cap ? ' · cap ' + cap : ''}${gv}${bc}${window.__nbAU && __nbAU.short ? ' · snd ' + __nbAU.short() : ''}`; }
     }
     return false;
   }
-  const rscale = () => clamp(+meta.qpScale || 100, 50, 100) / 100 * (typeof G !== 'undefined' && G.govScale || 1);   // v6.30.4 times the frame-rate governor's step
+  const rscale = () => clamp(+meta.qpScale || 100, 50, document.documentElement.classList.contains('touch') ? 100 : 150) / 100 * (typeof G !== 'undefined' && G.govScale || 1);   // v6.30.4 times the frame-rate governor's step
   function applyScale() { try { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, fx.quality === 'high' ? hiPixelRatio() : 1) * rscale()); resize(); } catch (e) {} }
   function applyFps() { if (fpsEl) fpsEl.hidden = !meta.qpFps; }
 
@@ -24038,7 +24043,7 @@ const NBX = window.NBX = (() => {
       b.insertAdjacentHTML('beforeend', '<h3 class="cxh">Picture</h3>' +
         slider('qpBright', 'BRIGHTNESS', 0, 100, 1, meta.qpBright, F.bright) +
         '<div class="setrow qpcal"><label>CALIBRATION</label><canvas id="qpCal" width="300" height="74"></canvas><span class="note" style="margin:0">Raise it until the square marked "barely" just shows; the one marked "hidden" should stay black.</span></div>' +
-        slider('qpScale', 'RENDER SCALE', 50, 100, 5, meta.qpScale, F.pct) +
+        slider('qpScale', 'RENDER SCALE', 50, document.documentElement.classList.contains('touch') ? 100 : 150, 5, meta.qpScale, F.pct) +   /* v6.78 above 100 % supersamples (desktop) */
         seg('qpCap', 'FRAME CAP', [[0, 'Off'], [30, '30'], [60, '60'], [90, '90'], [120, '120'], [144, '144']], +meta.qpCap || 0) +
         seg('qpFps', 'FPS COUNTER', OFFON, meta.qpFps ? 1 : 0) +
         slider('qpShake', 'CAMERA SHAKE', 0, 100, 5, meta.qpShake, F.pct) + slider('qpBob', 'HEAD BOB', 0, 100, 5, meta.qpBob, F.pct) +
@@ -36249,7 +36254,7 @@ function resume() { $('pause').hidden = true; $('lockOv').hidden = true; G.state
 // High: moon shadow 2048 soft, two lamp shadows, zombie shadows, MSAA up to ~1080p, extra pixel density only while the frame stays near 2.3 MP.
 // Auto (the default) starts at the last tier that held up and moves between tiers on measured frame time (see fpsWatch).
 const Q_TIERS = ['low', 'medium', 'high'];
-function hiPixelRatio() { const css = Math.max(1, innerWidth * innerHeight), ul = fx.ultra, tab = ul && nbTouchDev(); return Math.max(1, Math.min(ul ? 2 : 1.5, Math.sqrt((tab ? 1.4e6 : ul ? 3.7e6 : 2.3e6) / css))); }   // v6.45 Ultra: native up to ~1440p (tablets ~2 MP)
+function hiPixelRatio() { const css = Math.max(1, innerWidth * innerHeight), ul = fx.ultra, tab = ul && nbTouchDev(); return Math.max(1, Math.min(ul ? 2 : 1.5, Math.sqrt((tab ? 1.4e6 : ul ? 8.4e6 : 2.3e6) / css))); }   // v6.45 Ultra: native up to ~1440p (tablets ~2 MP); v6.78 Ultra desktop up to 4K
 function nbTouchDev() { return document.documentElement.classList.contains('touch'); }
 try { if (nbTouchDev() || matchMedia('(pointer:coarse)').matches) { if (Math.min(screen.width, screen.height) < 600) document.documentElement.classList.add('nbphone'); } } catch (e) {}
 function setQuality(q, fromAuto) {
@@ -36261,7 +36266,7 @@ function setQuality(q, fromAuto) {
   if (moon.shadow.mapSize.x !== size) { moon.shadow.mapSize.set(size, size); if (moon.shadow.map) { moon.shadow.map.dispose(); moon.shadow.map = null; } }
   { const fs = nbTouchDev() ? 2048 : 4096; moonFar.castShadow = sh; if (moonFar.shadow.mapSize.x !== fs) { moonFar.shadow.mapSize.set(fs, fs); if (moonFar.shadow.map) { moonFar.shadow.map.dispose(); moonFar.shadow.map = null; } } moonFar.shadow.needsUpdate = true; }   // v6.73
   Gfx6.uniforms.nbPcss.value = fx.ultra && !nbTouchDev() ? 1 : 0; Gfx6.uniforms.nbDetK.value = q === 'high' ? 1 : 0; Gfx6.uniforms.nbMoon.value.w = q === 'high' ? 1 : 0;   // v6.74 if (typeof nbShadowBake === 'function') nbShadowBake();   // v6.73
-  { const ls = hi && !nbTouchDev() ? 1024 : 512; scene.traverse(o => { if (o.isLight && o !== moon && o.castShadow && o.shadow && o.shadow.mapSize.x !== ls && o.shadow.mapSize.x <= 1024) { o.shadow.mapSize.set(ls, ls); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } }); }   // v6.45 Ultra: sharper lamp shadows
+  { const ls = hi && !nbTouchDev() ? (fx.ultra ? 2048 : 1024) : 512; scene.traverse(o => { if (o.isLight && o !== moon && o.castShadow && o.shadow && o.shadow.mapSize.x !== ls && o.shadow.mapSize.x <= 2048) { o.shadow.mapSize.set(ls, ls); if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; } } }); }   // v6.45 Ultra: sharper lamp shadows
   scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
   if (env && env.setQuality) env.setQuality(q); if (dress && dress.setQuality) dress.setQuality(q); if (detail) detail.setQuality(q); if (roomLife) roomLife.setQuality(q); if (trim) trim.setQuality(q); if (street) street.setQuality(q); if (vm.setQuality) vm.setQuality(q); Casings.setQuality(q); Smoke.setQuality(q); WorldFX.setQuality(q); Gfx6.setQuality(q); if (Gfx6.setUltra) Gfx6.setUltra(fx.ultra);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, hi ? hiPixelRatio() : 1) * (window.NBX ? NBX.rscale() : 1)); resize();
@@ -37342,7 +37347,7 @@ function nbShadowSchedule() { for (const t of NBSH.timers) clearTimeout(t); NBSH
 const _nbLp = new THREE.Vector3();
 function nbShadowTick(dt) {
   NBSH.t -= dt; if (NBSH.t > 0 || !NBSH.lamps.length) return; NBSH.t = 0.4;
-  const n = fx.ultra ? 3 : nbTouchDev() ? 1 : 2, cx = camera.position.x, cz = camera.position.z, near = [];   // v6.73.1 live lamps
+  const n = fx.ultra ? (nbTouchDev() ? 3 : 4) : nbTouchDev() ? 1 : 2, cx = camera.position.x, cz = camera.position.z, near = [];   // v6.73.1 live lamps
   for (const o of NBSH.lamps) {
     if (o.userData.nbReb && G.time > o.userData.nbReb) { o.userData.nbReb = 0; o.shadow.needsUpdate = true; }
     if (!o.castShadow || o.intensity <= 0) continue;

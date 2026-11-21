@@ -1,7 +1,7 @@
 {
- "version": "6.77.0",
- "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/eeb83beabfc7be3c34e50daee90aa74f1e355ac4/game/",
- "notes": "Night Bunker 6.77.0",
+ "version": "6.77.3",
+ "base": "https://raw.githubusercontent.com/jfisher907-max/night-bunker-updates/62beca7521cc1c0766d9a154f4f2a239f25b9026/game/",
+ "notes": "Night Bunker 6.77.3",
  "files": {
   "app/game/assets/ammo_color.webp": [
    30268,
@@ -1884,8 +1884,8 @@
    "8b2e8743ce607815e362ee2a39aece25ca62252c3adf7e7b27266b1d146e04c0"
   ],
   "app/game/assets/zombies.json": [
-   9390317,
-   "fccf08621fd2d909325ff47468209245b923de0a8181c53432d4dd2e1f356ff7"
+   9991597,
+   "b6d7780981d6b752038eee5edb7ba34b8b85ff7284a746bd7163da1a62cbf08e"
   ],
   "app/game/assets/life.json": [
    1391800,
@@ -2000,8 +2000,8 @@
    "ada44864241b96badcf89ae2bc8baed558044f6fdc85b8cbb8cab0dcf6effefd"
   ],
   "app/game/index.html": [
-   3362065,
-   "be3e787413fd6ff768414067e66f971ec7a5fab32751b7d08104c6d2501c3c96"
+   3371641,
+   "b0b0b93581ad5d18e2a0ffaf7566da839f0b334ba146da0ca59724bcb81295ac"
   ],
   "app/game/vendor/fonts.css": [
    314,
@@ -2025,7 +2025,7 @@
   ],
   "package.json": [
    2194,
-   "923f590d2b0947b57e439d4f1d260759254b4835684e75f438c0ed178ee43b47"
+   "eb204e96f66f7cea51a767cfc25c09a46535a7e5a1f53c9779b63042fa2d6ff8"
   ],
   "src/main.js": [
    8483,

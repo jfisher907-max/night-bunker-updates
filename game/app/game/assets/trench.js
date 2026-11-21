@@ -57,6 +57,26 @@ const TrenchPlan = (() => {
     st.win(3, 9, -1, 0); st.win(7, 22, -1, 0); st.win(42, 9, 1, 0); st.win(38, 22, 1, 0);
     st.win(16, 12, 0, -1); st.win(29, 12, 0, -1); st.win(16, 19, 0, 1); st.win(29, 19, 0, 1);
     st.win(14, 30, 0, 1); st.win(30, 30, 0, 1);
+    // v6.77.4 the doorways stand on the trench floor (they kept the ground's 1.8 m: the buy prompt needed a jump and the open door was a wall)
+    for (const d of st.doors) for (const [x, z] of d.cells) st.E[z * st.W + x] = 0;
+    // v6.77.4 the dead come in at your height: every barricade is the end of a short dug sap, a pit at the planks and a ramp up to the
+    // field, so they walk down into it and tear the boards face to face (before, they stood on the parapet over the gap and fell in).
+    // First the field round the works becomes earth cells (the dress draws earth per cell, so the saps can be cut into it).
+    { let x0 = st.W, x1 = -1, z0 = st.H, z1 = -1;
+      for (let z = 0; z < st.H; z++) for (let x = 0; x < st.W; x++) if (st.g[z][x] !== 'o') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+      for (let z = Math.max(0, z0 - 3); z <= Math.min(st.H - 1, z1 + 3); z++) for (let x = Math.max(0, x0 - 3); x <= Math.min(st.W - 1, x1 + 3); x++) if (st.g[z][x] === 'o') { st.g[z][x] = '#'; st.E[z * st.W + x] = GROUND; } }
+    const saps = [], sapWin = {}, N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const earth = (x, z) => x >= 0 && z >= 0 && x < st.W && z < st.H && st.g[z][x] === '#';
+    const byWalk = (x, z, sx, sz) => N4.some(([dx, dz]) => { const r = st.g[z + dz], c = r && r[x + dx]; return c && c !== '#' && c !== 'o' && !(x + dx === sx && z + dz === sz); });
+    for (const w of st.windows) {
+      const cells = [];
+      for (let i = 1; i <= 3; i++) { const x = w.x + w.nx * i, z = w.z + w.nz * i; if (!earth(x, z) || byWalk(x, z, i === 1 ? w.x : -9, i === 1 ? w.z : -9) || saps.includes(z * st.W + x)) break; cells.push([x, z]); }
+      if (cells.length < 2) continue;   // no room: this one keeps the drop in
+      const base = st.E[(w.z - w.nz) * st.W + (w.x - w.nx)], n = cells.length - 1, dir = w.nx > 0 ? 1 : w.nx < 0 ? 2 : w.nz > 0 ? 3 : 4;
+      st.E[w.z * st.W + w.x] = base;
+      cells.forEach(([x, z], i) => { const k = z * st.W + x; if (i === 0) st.E[k] = base; else { st.E[k] = base + (GROUND - base) * (i - 1) / n; st.rise[k] = (GROUND - base) / n; st.rdir[k] = dir; } saps.push(k); });
+      sapWin[w.x + ',' + w.z] = n;
+    }
     // ---- what stands on the floors
     st.obj('mortar', 9, 31, 1, 1, 'C', 1.0);
     st.obj('brazier', 5, 7, 1, 1, 'C', 1.1); st.obj('brazier', 40, 12, 1, 1, 'C', 1.1); st.obj('brazier', 18, 29, 1, 1, 'C', 1.1); st.obj('brazier', 33, 29, 1, 1, 'C', 1.1); st.obj('brazier', 23, 23, 1, 1, 'C', 1.1);
@@ -72,6 +92,7 @@ const TrenchPlan = (() => {
     const M = finish(st, seed, opts, { power, start, fog: 0.62, plan: 'trench', theme: 'trench' });
     M.noTrim = [FT, SL, WC, EC, CW, CH];
     M.trench = { zones: { SL, WC, EC, FT, CW, CH }, ground: GROUND, step: STEP, chapel: { x0: st.X(19), z0: st.Z(13), x1: st.X(26), z1: st.Z(18) }, sap: { x0: st.X(43), z0: st.Z(-6), x1: st.X(46), z1: st.Z(-1) },
+      saps, sapWin,   // v6.77.4
       bays: Array.from({ length: 8 }, (_, b) => st.X(6 * b)), names: { [SL]: 'SUPPORT LINE', [WC]: 'SUMP STREET', [EC]: 'LANTERN ALLEY', [FT]: 'FIRE TRENCH', [CW]: 'CHAPEL WALK', [CH]: 'CHAPEL YARD' } };
     return M;
   }
@@ -173,9 +194,19 @@ const TrenchDress = (() => {
     const BD = map.bounds, bx0 = BD.minX * CELL, bx1 = (BD.maxX + 1) * CELL, bz0 = BD.minZ * CELL, bz1 = (BD.maxZ + 1) * CELL, FAR = 70;
     for (const [xa, za, xb, zb] of [[bx0 - FAR, bz0 - FAR, bx1 + FAR, bz0], [bx0 - FAR, bz1, bx1 + FAR, bz1 + FAR], [bx0 - FAR, bz0, bx0, bz1], [bx1, bz0, bx1 + FAR, bz1]])
       put(PLANE, MAT.field, (xa + xb) / 2, GROUND, (za + zb) / 2, -HPI, 0, 0, xb - xa, zb - za, 1, BN);
+    const SAPS = new Set(TR.saps || []);   // v6.77.4
     for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
       const c = ch(x, z), k = k_(x, z); if (walk(c) || c === 'o') continue; if (objCell.has(k)) continue;
       const x0 = x * CELL, z0 = z * CELL;
+      if (SAPS.has(k)) {   // v6.77.4 a sap cell: the pit with duckboards at the barricade, the ramp up to the field behind it
+        const e = E[k], r = RS[k], d = map.rdir[k];
+        if (e > 0.01) box(mudOf(x, z), x0, -0.05, z0, x0 + CELL, e, z0 + CELL);
+        if (r) { const a = Math.atan2(r, CELL), L = Math.hypot(r, CELL), cy = e + r / 2 - 0.16 * Math.cos(a);
+          if (d <= 2) boxR(mudOf(x, z), x0 + 1, cy, z0 + 1, L, 0.32, CELL, 0, B, 0, d === 1 ? a : -a); else boxR(mudOf(x, z), x0 + 1, cy, z0 + 1, CELL, 0.32, L, 0, B, d === 3 ? -a : a, 0);
+          if (hi) for (let i = 0; i < 3; i++) { const t = (i + 0.5) / 3, y = e + r * t + 0.03, o = -1 + 2 * t; if (d <= 2) boxR(MAT.plankDark, x0 + 1 + (d === 1 ? o : -o), y, z0 + 1, 0.16, 0.05, CELL * 0.8, 0, BN, 0, d === 1 ? a : -a); else boxR(MAT.plankDark, x0 + 1, y, z0 + 1 + (d === 3 ? o : -o), CELL * 0.8, 0.05, 0.16, 0, BN, d === 3 ? -a : a, 0); } }
+        else for (let i = 0; i < 5; i++) { const o = -0.8 + i * 0.4; let ax = 0; for (const [dx, dz] of D4) if (SAPS.has(k_(x + dx, z + dz))) ax = dx ? 1 : 2; if (ax === 1) box(MAT.plankDark, x0 + 1 + o - 0.15, e + 0.01, z0 + 0.2, x0 + 1 + o + 0.15, e + 0.06, z0 + CELL - 0.2, BN); else box(MAT.plankDark, x0 + 0.2, e + 0.01, z0 + 1 + o - 0.15, x0 + CELL - 0.2, e + 0.06, z0 + 1 + o + 0.15, BN); }
+        continue;
+      }
       if (inChapelRing(x, z)) continue;   // the chapel draws its own walls below
       const yw = yardWall(x, z), hw = hutWall(x, z), top = E[k] || GROUND;
       // the block of earth
@@ -211,6 +242,12 @@ const TrenchDress = (() => {
           }
         }
       }
+      for (const [dx, dz] of D4) {   // v6.77.4 the sides of a sap: planks held by stakes, a wale along the lip
+        const nk = k_(x + dx, z + dz); if (!SAPS.has(nk)) continue;
+        const top = E[k] || GROUND, fx = x0 + 1 + dx, fz = z0 + 1 + dz;
+        if (dx) box(MAT.plankDark, dx > 0 ? fx - 0.06 : fx, -0.05, z0, dx > 0 ? fx : fx + 0.06, top - 0.04, z0 + CELL); else box(MAT.plankDark, x0, -0.05, dz > 0 ? fz - 0.06 : fz, x0 + CELL, top - 0.04, dz > 0 ? fz : fz + 0.06);
+        if (hi) for (const t of [0.15, CELL - 0.15]) { const px = dx ? fx + dx * 0.04 : x0 + t, pz = dz ? fz + dz * 0.04 : z0 + t; box(MAT.woodDark, px - 0.05, -0.05, pz - 0.05, px + 0.05, top + 0.12, pz + 0.05, BN); }
+      }
       // on the earth's top inside the lines: the odd crater lip, a picket, debris (keeps the mud from reading as one tile)
       if (hi && c === '#' && !yw && !hw) { const h = hash(x + 5, z + 9) % 41;
         if (h === 0) put(TORUS, MAT.crater, x0 + 1, top + 0.02, z0 + 1, HPI, 0, 0, 0.7, 0.7, 0.5, BN);
@@ -221,7 +258,7 @@ const TrenchDress = (() => {
     // ================================================================ barricades: ladders and a bag parapet at the parapet gaps; the sap's name over its mouth
     for (const w of map.windows) {
       const ix = w.x - w.nx, iz = w.z - w.nz, fl = Math.max(floorAt(cc(ix), cc(iz)), 0), fx = cc(w.x) - w.nx * (CELL / 2), fz = cc(w.z) - w.nz * (CELL / 2);
-      if (!hi) continue;
+      if (!hi || (TR.sapWin && TR.sapWin[w.x + ',' + w.z])) continue;   // v6.77.4 a barricade at the end of a sap needs no ladder
       const side = hash(w.x, w.z) % 2 ? 1 : -1, sx = -w.nz * side, sz = w.nx * side;   // along the wall
       pp('trench_ladder', fx + sx * 1.35 - w.nx * 0.42, fl, fz + sz * 1.35 - w.nz * 0.42, Math.atan2(-w.nx, -w.nz));
     }

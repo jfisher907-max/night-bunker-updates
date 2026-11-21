@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.77.4'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.77.5'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -22571,7 +22571,7 @@ function buildWindows() {
       if (elevH && !map.trench) { const k = z * GW + x, fi = g.position.y; if (Math.abs(elevH[k] - fi) > 0.02) { elevH[k] = fi; if (elevR) elevR[k] = 0; } }   // v6.72 the trench's parapet gaps keep the ground's height
     }
     windows.push({ x, z, wx, wz, nx, nz, zone: w.zone, boards: 6, meshes: boards, group: g, tug: 0, gy: floorAt(wx + nx * 2.4, wz + nz * 2.4) - g.position.y,
-      out: { x: wx + nx * WIN_OUT, z: wz + nz * WIN_OUT }, in: { x: wx - nx * 1.6, z: wz - nz * 1.6 }, climbBusy: 0, repairT: 0 });
+      out: { x: wx + nx * WIN_OUT, z: wz + nz * WIN_OUT }, in: { x: wx - nx * 1.6, z: wz - nz * 1.6 }, climbBusy: 0, repairT: 0, sapN: (map.trench && map.trench.sapWin && map.trench.sapWin[x + ',' + z]) || 0 });   // v6.77.4 sapN: the trench's dug approach
   }
   for (const w of windows) interactables.push({
     x: w.in.x, z: w.in.z, r: 2.1, w, active: () => zoneOpen[w.zone] && w.boards < 6 && S.boardSpeed > 0,
@@ -30618,7 +30618,7 @@ function makeZombie(win, hp, kind, boss) {
   const sc = 1;   // v6.19.2: every regular zombie the same size, near or far
   const z = { g: null, model: null, parts: [], eye, cv: kind === 'crawl' ? 'crawler' : Math.random() < 0.6 ? 'soldier' : 'civilian', cs: (Math.random() * 2) | 0, ct: (Math.random() * 4) | 0, helm: Math.random() < 0.55, hp, maxHp: hp, kind, boss: boss || null, win, state: 'rise', t: 0, x: 0, z: 0, y: -1.9, yaw: 0, phase: rand(0, 6), atkCD: 0, atkT: 0, tearT: rand(0, .4), groanT: rand(1, 5), flinch: 0, dead: false, deadT: 0, climbT: 0, burn: 0, abilityT: 4, charge: 0, scale: sc, height: 1.78 * sc * sc,
     a: { state: 'rise', moving: false, phase: 0, speedKind: kind === 'crawl' ? 'crawl' : kind, attackT: 0, flinch: 0, deadT: 0, riseT: 0, climbK: 0, boss: !!boss } };
-  const lat = rand(-3.5, 3.5), out = rand(5, 9);
+  const sapN = win.sapN || 0, lat = sapN ? rand(-0.3, 0.3) : rand(-3.5, 3.5), out = sapN ? 2 * (sapN + 1) + rand(0.5, 1.6) : rand(5, 9);   // v6.77.4 the trench: at the head of the sap
   z.x = win.wx + win.nx * out + (-win.nz) * lat; z.z = win.wz + win.nz * out + win.nx * lat;
   z.yaw = Math.atan2(-win.nx, -win.nz);
   z.fy = floorAt(z.x, z.z); z.y += z.fy;   // v6.0: they rise out of the ground they stand on
@@ -31370,6 +31370,13 @@ function recycleZombie(z) {
   if (z.model) { zParts = zParts.filter(p => p.userData.z !== z); tideNearN = Math.max(0, tideNearN - 1); }
   G.toSpawn++;
 }
+// v6.77.4 a zombie queued in a trench sap is shoved along it, never up onto the earth beside it
+function sapKeep(z) {
+  const w = z.win; if (!w || !w.sapN) return;
+  const u = (z.x - w.wx) * w.nx + (z.z - w.wz) * w.nz; if (u > 2 * (w.sapN + 1) + 0.6) return;
+  const lat = (z.x - w.wx) * -w.nz + (z.z - w.wz) * w.nx, m = 0.55; if (Math.abs(lat) <= m) return;
+  const f = (Math.sign(lat) * m - lat); z.x += -w.nz * f; z.z += w.nx * f;
+}
 function stepToward(z, tx, tz, sp, dt, collide) {
   sp *= wadeK(z.x, z.y, z.z);
   let dx = tx - z.x, dz = tz - z.z; const d = Math.hypot(dx, dz);
@@ -31516,7 +31523,7 @@ function updateZombies(dt) {
         const dx = z.x - o.x, dz = z.z - o.z, d2 = dx * dx + dz * dz, minD = 0.65 * (z.scale + o.scale) / 2;
         if (d2 < minD * minD && d2 > 1e-6) {
           const d = Math.sqrt(d2), push = (minD - d) * 0.5 * (o.boss ? 1.5 : 1) * (z.boss ? 0.2 : 1);
-          if (z.state === 'chase') moveCircle(z, dx / d * push, dz / d * push, 0.3 * z.scale, zSolid); else { z.x += dx / d * push; z.z += dz / d * push; }
+          if (z.state === 'chase') moveCircle(z, dx / d * push, dz / d * push, 0.3 * z.scale, zSolid); else { z.x += dx / d * push; z.z += dz / d * push; sapKeep(z); }
         }
       }
     }

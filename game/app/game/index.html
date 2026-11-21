@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.77.3'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.77.4'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -8358,6 +8358,7 @@ const ZombieProc = (() => {
     if (boss) T[C.hipsY] -= 0.03;
     if (kind === 'walk') {
       T[C.jaw] = 0.3 + 0.05 * Math.sin(p);
+      { const up = 0.28; const lg = 0.2; T[C.lLX] -= lg; T[C.lRX] -= lg; T[C.upRX] -= up; T[C.headRX] += up * 0.7; }   // v6.77.4 weight over the front foot: the mocap walk reclined (head 12 cm behind the pelvis)
       if (gs === 3) {   // hunched walk with one arm reaching for you, the other clutching low
         const r = A.side > 0 ? 'R' : 'L', k = 0.85;
         T[C['a' + r + 'X']] = lerp(T[C['a' + r + 'X']], 1.4 + Math.sin(p * 0.7) * 0.1 + sw(C['a' + r + 'X']) * 0.3, k); T[C['a' + r + 'A']] = lerp(T[C['a' + r + 'A']], 0.15, k);

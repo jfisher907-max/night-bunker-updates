@@ -891,7 +891,7 @@ html.touch #achPop .ap{min-width:0;padding:6px 12px 6px 8px}html.touch #achPop b
 
 <script>
 // Release stamp: one string shared by the web Artifact and the Windows build (its package version follows it).
-window.NB_VERSION = '6.78.0'; window.NB_BASE_VERSION = '6.2.1';
+window.NB_VERSION = '6.78.1'; window.NB_BASE_VERSION = '6.2.1';
 // v6.51.0 gun pool trim (Jake 10-31: pool too big next to WaW/BO1). These guns are switched off: never on a wall, in the Box,
 // the range, the Armory or the Codex, and a saved run holding one gets its closest kept gun. Their data, models and sounds stay;
 // deleting a key here brings the gun back.
@@ -33548,7 +33548,7 @@ const RFOL = (() => {
   const S = o => { const out = {}; for (const k in o) { const v = o[k]; out[k] = Array.isArray(v[0]) ? v.map(x => [x[0], x[1] || 1]) : [[v[0], v[1] || 1]]; } return out; };
   const RL = {
     // pistols and the revolver
-    pistol: S({ magOut: ['A_5'], magIn: ['A_4'], slideRack: ['A_17'], dry: ['A_19'] }),
+    pistol: S({ magOut: ['A_5'], magIn: ['A_4'], slideRack: ['A_17'], dry: ['X_18', 0.95] }),   // v6.78.1 dry: the 1911 take (A_19) is muffled next to real dry fires
     pm63: S({ magOut: ['X_5', 1.05], magIn: ['X_4', 1.05], slideRack: ['X_17'], dry: ['X_18'] }),
     magnum: S({ hingeOpen: ['V_9'], magOut: ['V_3'], magIn: ['V_18'], hingeClose: ['V_10'], dry: ['V_5'] }),
     // carbines and semi rifles
@@ -33613,7 +33613,7 @@ const RFOL = (() => {
     sawn: S({ shellIn: [['N_12', 1.06], ['L_15']], dry: ['N_18', 1.05] }),
     olympia: S({ shellIn: [['L_15', 0.92], ['N_12', 0.95]], dry: ['N_18', 0.95] }),
   };
-  const SYN_UNDER = 0.33;   // the synth stage under the recording
+  const SYN_UNDER = 0;   // v6.78.1 the recording alone: a synth layer under it read duller than any real take (compare/compare2.py)
   return { RL, SYN_UNDER, hits: {}, n: 0, ok: 0, failed: 0, got: {}, busy: {}, rms: {}, pack: null, loading: null };
 })();
 try { window.__nbRfol = RFOL; } catch (e) {}
@@ -33660,7 +33660,7 @@ function snd9Foley(stage, gain) {
   const st = SND9_STAGE[stage] ? SND9_STAGE[stage]() : stage, W = WEAPONS[g.key] || {}, fam = W.wonder || W.gale || W.snd === 'ether' || W.flame ? 'en' : SYN8.GUNFAM[g.key] || 'rf';
   const fams = SYN8.FOLEY_FAMS[st]; if (!fams) return false; const f = fams.includes(fam) ? fam : fams.includes('rf') ? 'rf' : fams[0];
   const gg = (gain || 0.5) * SYN8.FP[f].g, rec = rfolStage(g.key, st, stage, gg, 'fl_' + st + '_' + f);   // v6.70 the gun's own recording
-  const h = snd9Play('fl_' + st + '_' + f, { gain: gg * (rec ? RFOL.SYN_UNDER : 1), vary: 0.05 }) || rec;
+  const h = (rec && !RFOL.SYN_UNDER ? null : snd9Play('fl_' + st + '_' + f, { gain: gg * (rec ? RFOL.SYN_UNDER : 1), vary: 0.05 })) || rec;
   // WaW's "futz": the hands and webbing handling the gun under the first stage of a reload
   if (h && /Out|Open|Back/.test(st)) snd8Play('gear8_run', { gain: 0.07, vary: 0.1, delay: 0.02 });
   return !!h;
